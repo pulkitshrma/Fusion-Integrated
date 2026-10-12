@@ -35,6 +35,7 @@ export interface LeaveApplication {
 export interface LeaveBalance {
   category: LeaveCategory;
   year: number;
+  employee_kind: "faculty" | "staff";
   credited: string;
   carried_forward: string;
   consumed: string;
