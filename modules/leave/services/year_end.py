@@ -23,7 +23,7 @@ def process_year_end(year):
     balances = list(LeaveBalance.objects.select_for_update().filter(year=year).order_by("user_id", "category"))
     for balance in balances:
         try:
-            outcome = year_end_outcome(balance.category, balance.available)
+            outcome = year_end_outcome(balance.category, max(0, balance.available))
             next_year = year + 1
             policy = LeavePolicy.objects.filter(category=balance.category, is_active=True).first()
             if policy is None:
@@ -47,7 +47,7 @@ def process_year_end(year):
                     raise ValueError("No active EL policy exists for VL conversion")
                 el_balance, _ = LeaveBalance.objects.select_for_update().get_or_create(
                     user_id=balance.user_id, category="EL", year=next_year,
-                    defaults={"credited": el_policy.annual_entitlement})
+                    defaults={"credited": 0})
                 conversion_ref = f"VL-to-EL:{year}:2-to-1"
                 if not _posted(balance.user_id, "EL", conversion_ref):
                     el_balance.credited += outcome["credit_el"]
