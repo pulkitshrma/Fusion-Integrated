@@ -50,6 +50,7 @@ export default function LeaveAdminPage() {
   const [escalation, setEscalation] = useState<number | string>(48);
   const [escalationUser, setEscalationUser] = useState<number | string>("");
   const [offlineUser, setOfflineUser] = useState<number | string>("");
+  const [offlineRole, setOfflineRole] = useState("");
   const [offlineCategory, setOfflineCategory] = useState<string | null>("CL");
   const [offlineStart, setOfflineStart] = useState("");
   const [offlineEnd, setOfflineEnd] = useState("");
@@ -216,6 +217,7 @@ export default function LeaveAdminPage() {
           <Stack gap="xs">
             <Group grow>
               <NumberInput label="Employee user ID" min={1} value={offlineUser} onChange={setOfflineUser} />
+              <TextInput label="Applicant role / designation" value={offlineRole} onChange={(e) => setOfflineRole(e.currentTarget.value)} />
               <Select label="Category" data={CATEGORIES} value={offlineCategory} onChange={setOfflineCategory} />
             </Group>
             <Group grow>
@@ -231,7 +233,7 @@ export default function LeaveAdminPage() {
               <Button loading={offlineSanction.isPending}
                 disabled={!offlineUser || !offlineCategory || !offlineStart || !offlineEnd || !offlinePurpose.trim() || !offlineReference.trim() || !offlineDate}
                 onClick={() => offlineSanction.mutate({ body: {
-                  user_id: Number(offlineUser), category: offlineCategory,
+                  user_id: Number(offlineUser), applicant_role: offlineRole, category: offlineCategory,
                   start_date: offlineStart, end_date: offlineEnd, purpose: offlinePurpose,
                   sanction_reference: offlineReference, sanction_date: offlineDate,
                 } }, { onSuccess: () => success("Offline sanction synchronized"), onError: fail })}>
