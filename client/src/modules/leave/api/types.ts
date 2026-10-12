@@ -15,6 +15,7 @@ export interface LeaveApplication {
   category: LeaveCategory;
   start_date: string;
   end_date: string;
+  actual_end_date: string | null;
   half_day: string;
   purpose: string;
   status: string;
