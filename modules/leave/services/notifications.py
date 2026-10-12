@@ -42,3 +42,20 @@ def notify_substitute(application):
                     f"You have been nominated as a substitute for leave request {application.pk}.")
     except Exception:
         log.exception("Could not send ELM substitute notification for application=%s", application.pk)
+
+
+def notify_lifecycle_assignee(request):
+    from modules.leave.models import LeaveSLAEvent
+    recipient = request.current_assignee_user_id
+    if recipient is None:
+        return
+    try:
+        notify_user(recipient, "Leave workflow task assigned",
+                    f"A {request.kind} request requires your action. Reference: {request.pk}.")
+    except Exception:
+        log.exception("Could not send ELM lifecycle notification for request=%s", request.pk)
+    LeaveSLAEvent.objects.create(
+        lifecycle_request=request, event_type="assigned", recipient_user_id=recipient,
+        details={"assignment_updated_at": request.updated_at.isoformat(),
+                 "status": request.status, "task_type": f"lifecycle:{request.kind}"},
+    )
