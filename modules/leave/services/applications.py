@@ -229,7 +229,7 @@ def decide(*, application_id, actor, outcome, note=""):
     if current is None:
         raise PermissionDeniedError("You are not part of this application's configured approval route.")
     old = app.status
-    required_permission = "leave.workflow.review" if current.step_type == "unit_head" else "leave.workflow.sanction"
+    required_permission = "employee_leave_management.workflow.review" if current.step_type == "unit_head" else "employee_leave_management.workflow.sanction"
     if not actor.has_permission(required_permission):
         raise PermissionDeniedError(f"This action requires {required_permission}.")
     final = False
