@@ -51,3 +51,42 @@ def list_vacation_periods(start: date, end: date) -> list[VacationPeriodDTO]:
             is_active=True, start_date__lte=end, end_date__gte=start
         ).order_by("start_date")
     ]
+
+
+def list_pending_attendance_syncs(limit: int = 100) -> list[dict]:
+    """Public polling contract for the attendance service's outbox consumer."""
+    from modules.leave.models import LeaveAttendanceSyncOutbox
+    return list(LeaveAttendanceSyncOutbox.objects.filter(status="pending")
+                .order_by("created_at", "id").values(
+                    "id", "user_id", "payload", "created_at"
+                )[:max(1, min(limit, 500))])
+
+
+@transaction.atomic
+def mark_attendance_sync_result(outbox_id: int, *, success: bool, details: str = "") -> bool:
+    """Acknowledge a delivered attendance update; failed deliveries remain retryable."""
+    from django.utils import timezone
+    from modules.leave.models import LeaveAttendanceSyncOutbox
+    item = LeaveAttendanceSyncOutbox.objects.select_for_update().filter(pk=outbox_id).first()
+    if item is None or item.status == "processed":
+        return False
+    item.attempts += 1
+    item.status = "processed" if success else "failed"
+    item.last_error = "" if success else details
+    item.processed_at = timezone.now() if success else None
+    item.save(update_fields=["attempts", "status", "last_error", "processed_at"])
+    return True
+
+
+@transaction.atomic
+def retry_attendance_sync(outbox_id: int) -> bool:
+    from modules.leave.models import LeaveAttendanceSyncOutbox
+    item = LeaveAttendanceSyncOutbox.objects.select_for_update().filter(
+        pk=outbox_id, status="failed"
+    ).first()
+    if item is None:
+        return False
+    item.status = "pending"
+    item.last_error = ""
+    item.save(update_fields=["status", "last_error"])
+    return True
