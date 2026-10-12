@@ -1,4 +1,6 @@
 """Fail-closed workflow routing from the administrator-maintained route table."""
+from types import SimpleNamespace
+
 from modules.directory.contracts import get_users
 from modules.leave.models import LeaveWorkflowStep
 
@@ -15,6 +17,8 @@ def applicant_context(application):
 
 
 def route_steps(application):
+    if application.workflow_snapshot:
+        return [SimpleNamespace(**row) for row in application.workflow_snapshot]
     person = applicant_context(application)
     unit = person.department or ""
     role = application.applicant_role or ""
