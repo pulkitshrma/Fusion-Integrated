@@ -133,14 +133,7 @@ def respond_extension_substitute(*, request_id, actor, accept, note=""):
         action="substitute_accept" if accept else "substitute_decline",
         actor_user_id=actor.user_id, note=note,
     )
-    if accept:
-        notifications.notify_lifecycle_assignee(req)
-    else:
-        try:
-            notifications.notify_user(req.application.user_id, "Extension substitute declined",
-                                      f"Extension request {req.pk} needs a replacement substitute.")
-        except Exception:
-            pass
+    notifications.notify_lifecycle_assignee(req)
     return req
 
 
