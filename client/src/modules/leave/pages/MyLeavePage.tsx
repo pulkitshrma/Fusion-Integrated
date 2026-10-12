@@ -31,6 +31,7 @@ export default function MyLeavePage() {
   const cancel = useLeaveMutation("/leave/applications/:id/cancel");
   const extend = useLeaveMutation("/leave/applications/:id/extend");
   const resume = useLeaveMutation("/leave/applications/:id/resumption");
+  const withdrawLifecycle = useLeaveMutation("/leave/lifecycle/:id/withdraw");
 
   const [category, setCategory] = useState<string | null>("CL");
   const [start, setStart] = useState("");
@@ -192,7 +193,12 @@ export default function MyLeavePage() {
           <Title order={4} mb="sm">Lifecycle requests</Title>
           {(lifecycle.data?.results ?? []).map((r) => <Group key={r.id} justify="space-between" py={4}>
             <Text size="sm">#{r.id} · {r.kind} · application #{r.application_id}</Text>
-            <Badge variant="light">{r.status.replaceAll("_", " ")}</Badge>
+            <Group gap="xs">
+              <Badge variant="light">{r.status.replaceAll("_", " ")}</Badge>
+              {["pending", "awaiting_substitute", "applicant_action_required"].includes(r.status) &&
+                <Button size="xs" color="gray" variant="light"
+                  onClick={() => action(withdrawLifecycle, r.id, { note: "Employee withdrew pending lifecycle request" }, "Lifecycle request withdrawn")}>Withdraw</Button>}
+            </Group>
           </Group>)}
         </Card>
 
