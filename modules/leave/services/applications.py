@@ -120,13 +120,18 @@ def _validate_substitute(*, applicant_id, substitute_id, start, end):
     if not substitute_id or substitute_id == applicant_id:
         raise rules.PolicyViolation("invalid_substitute", "A substitute must be another employee.")
     person = get_users([substitute_id]).get(substitute_id)
-    if person is None or person.kind not in {"faculty", "staff"}:
+    if person is None or (person.kind or "").lower() not in {"faculty", "staff"}:
         raise rules.PolicyViolation("invalid_substitute", "The nominated substitute must be another institute employee.")
     conflict = LeaveApplication.objects.filter(
         user_id=substitute_id, status__in=[*PENDING, "approved", "cancellation_pending"],
         start_date__lte=end, end_date__gte=start,
     ).exists()
-    if conflict:
+    extension_conflict = LeaveLifecycleRequest.objects.filter(
+        application__user_id=substitute_id, kind="extension",
+        status__in=["pending", "awaiting_substitute", "applicant_action_required", "approved"],
+        requested_start_date__lte=end, requested_end_date__gte=start,
+    ).exists()
+    if conflict or extension_conflict:
         raise rules.PolicyViolation("substitute_unavailable", "The nominated substitute has overlapping pending or approved leave.")
 
 
