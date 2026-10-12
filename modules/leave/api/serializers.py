@@ -156,3 +156,9 @@ class LeaveLedgerEntrySerializer(serializers.ModelSerializer):
         fields = ("id", "application_id", "category", "amount", "entry_type",
                   "reference", "created_at")
         read_only_fields = fields
+
+
+class RecordMaintenanceSerializer(serializers.Serializer):
+    purpose = serializers.CharField(max_length=2000, required=False)
+    station_leave_details = serializers.DictField(required=False)
+    correction_note = serializers.CharField(max_length=1000)
