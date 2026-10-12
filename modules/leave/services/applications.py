@@ -43,9 +43,15 @@ def _requested_days(category, start, end, half_day):
     if category == "CL" and half_day:
         if start != end:
             raise rules.PolicyViolation("invalid_half_day", "Half-day CL must be for one date.")
+        closed = _calendar_dates(start, end, "holiday")
+        if start.weekday() >= 5 or start in closed:
+            raise rules.PolicyViolation("invalid_half_day", "Half-day CL must fall on a working day.")
         return Decimal("0.5")
     if category in {"CL", "SCL"}:
-        return _working_days(start, end, _calendar_dates(start, end, "holiday"))
+        days = _working_days(start, end, _calendar_dates(start, end, "holiday"))
+        if days <= 0:
+            raise rules.PolicyViolation("no_working_days", "The selected period contains no working days.")
+        return days
     if category == "RH":
         return Decimal("1")
     return Decimal((end - start).days + 1)
