@@ -34,6 +34,161 @@
       "scope_permissions": [],
       "system_permissions": []
     },
+    "employee_leave_management": {
+      "grants": {
+        "Dean": [
+          "employee_leave_management.report.view",
+          "employee_leave_management.workflow.review",
+          "employee_leave_management.workflow.sanction"
+        ],
+        "Deputy Registrar (Estt.)": [
+          "employee_leave_management.report.view",
+          "employee_leave_management.workflow.review",
+          "employee_leave_management.workflow.sanction"
+        ],
+        "Director": [
+          "employee_leave_management.report.view",
+          "employee_leave_management.workflow.review",
+          "employee_leave_management.workflow.sanction"
+        ],
+        "Head of Department": [
+          "employee_leave_management.substitute.respond",
+          "employee_leave_management.workflow.review"
+        ],
+        "Head of Office": [
+          "employee_leave_management.substitute.respond",
+          "employee_leave_management.workflow.review"
+        ],
+        "Head of Section": [
+          "employee_leave_management.substitute.respond",
+          "employee_leave_management.workflow.review"
+        ],
+        "Leave Administrator": [
+          "employee_leave_management.calendar.manage",
+          "employee_leave_management.policy.manage",
+          "employee_leave_management.records.manage",
+          "employee_leave_management.report.view"
+        ],
+        "Registrar": [
+          "employee_leave_management.report.view",
+          "employee_leave_management.workflow.review",
+          "employee_leave_management.workflow.sanction"
+        ],
+        "employee": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
+          "employee_leave_management.substitute.respond"
+        ],
+        "faculty": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
+          "employee_leave_management.substitute.respond"
+        ],
+        "leave_administrator": [
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.calendar.manage",
+          "employee_leave_management.policy.manage",
+          "employee_leave_management.records.manage",
+          "employee_leave_management.report.view"
+        ],
+        "staff": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
+          "employee_leave_management.substitute.respond"
+        ],
+        "unit_head": [
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.substitute.respond",
+          "employee_leave_management.workflow.review"
+        ]
+      },
+      "module_grants": [
+        "Dean",
+        "Deputy Registrar (Estt.)",
+        "Director",
+        "Head of Department",
+        "Head of Office",
+        "Head of Section",
+        "Leave Administrator",
+        "Registrar",
+        "employee",
+        "faculty",
+        "leave_administrator",
+        "staff",
+        "unit_head"
+      ],
+      "permissions": [
+        {
+          "code": "employee_leave_management.application.view_self",
+          "label": "View own leave applications and balances"
+        },
+        {
+          "code": "employee_leave_management.application.create",
+          "label": "Apply for leave"
+        },
+        {
+          "code": "employee_leave_management.application.withdraw",
+          "label": "Withdraw a pending leave request"
+        },
+        {
+          "code": "employee_leave_management.application.cancel",
+          "label": "Request cancellation of approved leave"
+        },
+        {
+          "code": "employee_leave_management.application.extend",
+          "label": "Request extension of ongoing leave"
+        },
+        {
+          "code": "employee_leave_management.application.resume",
+          "label": "Submit resumption of duty"
+        },
+        {
+          "code": "employee_leave_management.workflow.review",
+          "label": "Review leave requests"
+        },
+        {
+          "code": "employee_leave_management.workflow.sanction",
+          "label": "Make final leave decisions"
+        },
+        {
+          "code": "employee_leave_management.substitute.respond",
+          "label": "Accept or decline substitute responsibility"
+        },
+        {
+          "code": "employee_leave_management.calendar.manage",
+          "label": "Maintain and publish holiday and RH calendars"
+        },
+        {
+          "code": "employee_leave_management.policy.manage",
+          "label": "Maintain leave policy and hierarchy configuration"
+        },
+        {
+          "code": "employee_leave_management.records.manage",
+          "label": "Maintain authorized leave records"
+        },
+        {
+          "code": "employee_leave_management.report.view",
+          "label": "View leave management reports"
+        }
+      ],
+      "scope_permissions": [],
+      "system_permissions": [
+        "employee_leave_management.workflow.sla",
+        "employee_leave_management.workflow.year_end"
+      ]
+    },
     "placement_cell": {
       "grants": {
         "Dean Academic": [
