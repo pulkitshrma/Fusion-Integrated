@@ -15,6 +15,7 @@ source_modules =
     modules.placement
     modules.directory
     modules.accesscontrol
+    modules.leave
 forbidden_modules =
     modules.placement.models
     modules.placement.services
@@ -65,3 +66,13 @@ layers =
     modules.placement.selectors
     modules.placement.models
     modules.placement.domain
+
+[importlinter:contract:leave-layers]
+name = Layering inside leave
+type = layers
+layers =
+    modules.leave.api
+    modules.leave.services
+    modules.leave.selectors
+    modules.leave.models
+    modules.leave.domain
