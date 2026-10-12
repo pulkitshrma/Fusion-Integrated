@@ -11,7 +11,7 @@ from modules.leave.models import (
     LeaveApplication, LeaveApplicationEvent, LeaveBalance, LeaveLedgerEntry,
     LeaveLifecycleEvent, LeaveLifecycleRequest, LeaveVacationPeriod,
 )
-from modules.leave.services import applications, workflow
+from modules.leave.services import applications, workflow, notifications
 
 
 def _first_route_step(application):
@@ -43,6 +43,7 @@ def request_cancellation(*, application_id, actor, details=""):
         request=request, from_status="", to_status="pending",
         action="request_cancellation", actor_user_id=actor.user_id, note=details,
     )
+    notifications.notify_lifecycle_assignee(request)
     old = app.status
     app.status = "cancellation_pending"
     app.save(update_fields=["status", "updated_at"])
@@ -69,6 +70,7 @@ def request_extension(*, application_id, actor, new_end_date, details="", substi
         raise ConflictError("The extension end date must be after the approved end date.", code="invalid_extension_period")
     increment_start = app.end_date + timedelta(days=1)
     incremental = applications._requested_days(app.category, increment_start, new_end_date, "")
+    applications._validate_overlap(app.user_id, increment_start, new_end_date, app.category, "")
     balance = applications._balance_for_update(app.user_id, app.category, app.start_date.year)
     if balance.available < incremental:
         raise rules.PolicyViolation("insufficient_balance", "Available balance is insufficient for the extension.")
@@ -101,6 +103,14 @@ def request_extension(*, application_id, actor, new_end_date, details="", substi
         request=request, from_status="", to_status=request_status,
         action="request_extension", actor_user_id=actor.user_id, note=details,
     )
+    if substitute_user_id:
+        try:
+            notifications.notify_user(substitute_user_id, "Extension substitute consent requested",
+                                      f"You have been nominated for extension request {request.pk}.")
+        except Exception:
+            pass
+    else:
+        notifications.notify_lifecycle_assignee(request)
     return request
 
 
@@ -130,6 +140,19 @@ def respond_extension_substitute(*, request_id, actor, accept, note=""):
         action="substitute_accept" if accept else "substitute_decline",
         actor_user_id=actor.user_id, note=note,
     )
+    if accept:
+        notifications.notify_lifecycle_assignee(req)
+    else:
+        try:
+            notifications.notify_user(req.application.user_id, "Extension substitute declined",
+                                      f"Extension request {req.pk} needs a replacement substitute.")
+        except Exception:
+            pass
+    try:
+        notifications.notify_user(app.user_id, f"Leave {req.kind} decision recorded",
+                                  f"Your {req.kind} request {req.pk} was {req.status}. {note}")
+    except Exception:
+        pass
     return req
 
 
@@ -156,6 +179,7 @@ def submit_resumption(*, application_id, actor, actual_resumption_date, details=
         request=req, from_status="", to_status="pending",
         action="submit_resumption", actor_user_id=actor.user_id, note=details,
     )
+    notifications.notify_lifecycle_assignee(req)
     return req
 
 
@@ -198,6 +222,7 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
             action="recommended" if approve else "not_recommended",
             actor_user_id=actor.user_id, note=note,
         )
+        notifications.notify_lifecycle_assignee(req)
         return req
 
     req.status = "approved" if approve else "rejected"
