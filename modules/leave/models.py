@@ -33,6 +33,7 @@ class LeaveCalendar(TimeStampedModel):
 
 class LeaveBalance(TimeStampedModel):
     user_id = models.BigIntegerField(db_index=True)
+    employee_kind = models.CharField(max_length=12, choices=[("faculty", "Faculty"), ("staff", "Staff")], default="staff")
     category = models.CharField(max_length=3)
     year = models.PositiveSmallIntegerField()
     credited = models.DecimalField(max_digits=8, decimal_places=2, default=0)
