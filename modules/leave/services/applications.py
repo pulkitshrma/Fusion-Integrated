@@ -131,7 +131,7 @@ def apply(*, actor, category, start_date, end_date, purpose,
     status = sm.AWAITING_SUBSTITUTE if substitute_user_id else sm.AWAITING_UNIT_HEAD
     app = LeaveApplication.objects.create(
         user_id=user_id, category=category, start_date=start_date, end_date=end_date,
-        half_day=half_day, purpose=purpose, employee_kind=employee_kind,
+        half_day=half_day, purpose=purpose, employee_kind=employee_kind,\n        applicant_role=(actor.active_role or ""),
         requested_days=days, status=status,
         station_leave_required=station_leave_required,
         station_leave_details=station_leave_details or {},
