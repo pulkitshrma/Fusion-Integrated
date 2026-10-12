@@ -1,5 +1,6 @@
 """ELM HTTP boundary. Domain failures are translated to stable API errors."""
-from django.utils import timezone\nfrom django.http import HttpResponse
+from django.utils import timezone
+from django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
