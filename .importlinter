@@ -26,6 +26,11 @@ forbidden_modules =
     modules.directory.services
     modules.directory.api
     modules.accesscontrol.models
+    modules.leave.models
+    modules.leave.services
+    modules.leave.selectors
+    modules.leave.api
+    modules.leave.domain
 # DIRECT imports only. contracts.py legitimately imports its OWN module's
 # models and services, so following the chain transitively would make this
 # contract impossible to satisfy. What we forbid is a module reaching straight
