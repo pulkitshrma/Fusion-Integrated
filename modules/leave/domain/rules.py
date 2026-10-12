@@ -1,8 +1,4 @@
-"""Pure ELM policy rules. No Django imports.
-
-Policy values are supplied by the application service from the current
-configured policy and effective published calendar.
-"""
+"""Pure ELM policy rules. No Django imports."""
 from datetime import date, timedelta
 from decimal import Decimal
 
@@ -20,19 +16,6 @@ class PolicyViolation(ValueError):
         self.code = code
 
 
-def leave_days(category, start, end, half_day=False):
-    if end < start:
-        raise PolicyViolation("invalid_period", "End date must not precede start date.")
-    days = (end - start).days + 1
-    if category in {"EL", "COL", "VL"}:
-        return Decimal(days)
-    if category in {"CL", "SCL", "RH"}:
-        # These categories do not count intervening weekends/closed holidays
-        # as continuous leave days. The caller supplies institute working days.
-        return Decimal("0.5") if category == "CL" and half_day else Decimal(days)
-    raise PolicyViolation("unsupported_category", "Unsupported leave category.")
-
-
 def validate_category(category, employee_kind):
     if category not in CATEGORIES:
         raise PolicyViolation("unsupported_category", "Only CL, RH, SCL, EL, COL and VL are supported.")
@@ -43,8 +26,7 @@ def validate_category(category, employee_kind):
 
 
 def validate_rh(start, end, published_rh_dates):
-    dates = {d for d in published_rh_dates}
-    if start != end or start not in dates:
+    if start != end or start not in set(published_rh_dates):
         raise PolicyViolation("rh_calendar_mismatch", "RH must match an effective published Restricted Holiday.")
 
 
@@ -53,16 +35,16 @@ def validate_vacation(start, end, vacation_periods):
         raise PolicyViolation("outside_vacation", "VL may be availed only within an Academic Calendar vacation period.")
 
 
-def validate_overlap(start, end, existing, *, half_day=None):
+def validate_overlap(start, end, existing, *, half_day=None, category=None):
     for item in existing:
         if start <= item["end"] and end >= item["start"]:
-            same_date_halves = (
-                start == end == item["start"] == item["end"]
+            distinct_halves = (
+                category == item.get("category") == "CL"
+                and start == end == item["start"] == item["end"]
                 and half_day and item.get("half_day")
                 and half_day != item.get("half_day")
-                and item.get("category") == "CL"
             )
-            if not same_date_halves:
+            if not distinct_halves:
                 raise PolicyViolation("leave_overlap", "The requested period overlaps pending or approved leave.")
 
 
