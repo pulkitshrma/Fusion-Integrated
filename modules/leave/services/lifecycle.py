@@ -1,7 +1,7 @@
 """Approved-leave cancellation, extension and resumption workflows."""
-from datetime import date
+from datetime import timedelta
 from django.db import transaction
-from django.utils import timezone
+from django.utils import timezone\nfrom decimal import Decimal
 from core.api.exceptions import ConflictError, NotFoundError, PermissionDeniedError
 from modules.leave.domain import rules
 from modules.leave.models import (
@@ -62,13 +62,13 @@ def request_extension(*, application_id, actor, new_end_date, details=""):
         raise ConflictError("Extension is available only while the approved leave is ongoing.", code="extension_not_ongoing")
     if new_end_date <= app.end_date:
         raise ConflictError("The extension end date must be after the approved end date.", code="invalid_extension_period")
-    incremental = applications._requested_days(app.category, app.end_date.replace(day=app.end_date.day) + __import__("datetime").timedelta(days=1), new_end_date, "")
+    incremental = applications._requested_days(app.category, app.end_date + timedelta(days=1), new_end_date, "")
     balance = applications._balance_for_update(app.user_id, app.category, app.start_date.year)
     if balance.available < incremental:
         raise rules.PolicyViolation("insufficient_balance", "Available balance is insufficient for the extension.")
     if app.category == "VL":
-        periods = list(__import__("modules.leave.models", fromlist=["LeaveVacationPeriod"]).LeaveVacationPeriod.objects.filter(
-            is_active=True, start_date__lte=app.end_date + __import__("datetime").timedelta(days=1),
+        periods = list(LeaveVacationPeriod.objects.filter(
+            is_active=True, start_date__lte=app.end_date + timedelta(days=1),
             end_date__gte=new_end_date).values_list("start_date", "end_date"))
         rules.validate_vacation(app.end_date + __import__("datetime").timedelta(days=1), new_end_date, periods)
     request = LeaveLifecycleRequest.objects.create(
