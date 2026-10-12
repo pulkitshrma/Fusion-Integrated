@@ -209,11 +209,11 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
         raise PermissionDeniedError("Only the currently assigned workflow actor may process this request.")
     app = LeaveApplication.objects.select_for_update().get(pk=req.application_id)
     if req.kind == "resumption":
-        required_permission = "leave.workflow.sanction"
+        required_permission = "employee_leave_management.workflow.sanction"
     elif req.current_step_type == "unit_head":
-        required_permission = "leave.workflow.review"
+        required_permission = "employee_leave_management.workflow.review"
     else:
-        required_permission = "leave.workflow.sanction"
+        required_permission = "employee_leave_management.workflow.sanction"
     if not actor.has_permission(required_permission):
         raise PermissionDeniedError(f"This action requires {required_permission}.")
     old = req.status
