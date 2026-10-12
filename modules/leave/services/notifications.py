@@ -42,6 +42,12 @@ def notify_substitute(application):
                     f"You have been nominated as a substitute for leave request {application.pk}.")
     except Exception:
         log.exception("Could not send ELM substitute notification for application=%s", application.pk)
+    from modules.leave.models import LeaveSLAEvent
+    LeaveSLAEvent.objects.create(
+        application=application, event_type="assigned", recipient_user_id=recipient,
+        details={"assignment_updated_at": application.updated_at.isoformat(),
+                 "status": application.status},
+    )
 
 
 def notify_lifecycle_assignee(request):
