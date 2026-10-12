@@ -1,18 +1,33 @@
 from rest_framework import serializers
 from modules.leave.models import (
-    LeaveApplication, LeaveBalance, LeaveCalendar, LeaveLifecycleRequest,
-    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep,
+    LeaveApplication, LeaveApplicationEvent, LeaveBalance, LeaveCalendar,
+    LeaveLifecycleEvent, LeaveLifecycleRequest, LeavePolicy, LeaveSLAConfig,
+    LeaveWorkflowStep,
 )
 
 
+class LeaveApplicationEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveApplicationEvent
+        fields = ("from_status", "to_status", "action", "actor_user_id", "note", "created_at")
+
+
+class LeaveLifecycleEventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveLifecycleEvent
+        fields = ("from_status", "to_status", "action", "actor_user_id", "note", "created_at")
+
+
 class LeaveApplicationSerializer(serializers.ModelSerializer):
+    events = LeaveApplicationEventSerializer(many=True, read_only=True)
+
     class Meta:
         model = LeaveApplication
         fields = ("id", "category", "start_date", "end_date", "half_day", "purpose",
             "status", "requested_days", "station_leave_required", "station_leave_details",
             "substitute_user_id", "substitute_response", "current_assignee_user_id",
             "final_decision_by_user_id", "final_decision_at", "decision_note",
-            "created_at", "updated_at")
+            "events", "created_at", "updated_at")
         read_only_fields = fields
 
 
@@ -51,12 +66,14 @@ class LeaveBalanceSerializer(serializers.ModelSerializer):
 
 
 class LifecycleRequestSerializer(serializers.ModelSerializer):
+    events = LeaveLifecycleEventSerializer(many=True, read_only=True)
+
     class Meta:
         model = LeaveLifecycleRequest
         fields = ("id", "application_id", "kind", "status", "requested_start_date",
                   "requested_end_date", "actual_resumption_date", "details",
                   "current_assignee_user_id", "final_decision_by_user_id",
-                  "final_decision_at", "decision_note", "created_at", "updated_at")
+                  "final_decision_at", "decision_note", "events", "created_at", "updated_at")
         read_only_fields = fields
 
 
