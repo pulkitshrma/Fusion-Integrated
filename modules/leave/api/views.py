@@ -208,7 +208,7 @@ class MyLifecycleRequestsView(generics.ListAPIView):
         ).order_by("-created_at")
 
 
-class PolicyAdminView(generics.ListCreateAPIView):
+class PolicyAdminView(generics.ListAPIView):
     queryset = LeavePolicy.objects.all().order_by("category")
     serializer_class = s.PolicySerializer
     permission_classes = [MODULE, HasPermission("employee_leave_management.policy.manage")]
