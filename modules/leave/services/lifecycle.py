@@ -308,3 +308,39 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
     except Exception:
         pass
     return req
+
+
+@transaction.atomic
+def withdraw_lifecycle_request(*, request_id, actor, note=""):
+    req = LeaveLifecycleRequest.objects.select_for_update().select_related("application").filter(
+        pk=request_id, application__user_id=actor.user_id,
+        status__in=["pending", "awaiting_substitute", "applicant_action_required"],
+    ).first()
+    if req is None:
+        raise NotFoundError("No pending lifecycle request is available to withdraw.")
+    old = req.status
+    old_assignee = req.current_assignee_user_id
+    req.status = "withdrawn"
+    req.current_assignee_user_id = None
+    req.save(update_fields=["status", "current_assignee_user_id", "updated_at"])
+    LeaveLifecycleEvent.objects.create(
+        request=req, from_status=old, to_status="withdrawn",
+        action="withdraw", actor_user_id=actor.user_id, note=note,
+    )
+    if req.kind == "cancellation":
+        app = LeaveApplication.objects.select_for_update().get(pk=req.application_id)
+        app.status = "approved"
+        app.save(update_fields=["status", "updated_at"])
+    if old_assignee and old_assignee != actor.user_id:
+        try:
+            notifications.notify_user(old_assignee, "Leave lifecycle request withdrawn",
+                                      f"Request {req.pk} was withdrawn; no further action is required.")
+        except Exception:
+            pass
+    if req.substitute_user_id and req.substitute_user_id != actor.user_id:
+        try:
+            notifications.notify_user(req.substitute_user_id, "Leave extension withdrawn",
+                                      f"Extension request {req.pk} was withdrawn.")
+        except Exception:
+            pass
+    return req
