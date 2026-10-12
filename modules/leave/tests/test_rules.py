@@ -10,9 +10,10 @@ class LeavePolicyRulesTests(SimpleTestCase):
         with self.assertRaises(rules.PolicyViolation):
             rules.validate_category("VL", "staff")
 
-    def test_faculty_el_not_in_baseline(self):
-        with self.assertRaises(rules.PolicyViolation):
-            rules.validate_category("EL", "faculty")
+    def test_faculty_el_is_available_only_through_a_credited_balance(self):
+        # Applicability is balance-controlled: faculty receive no direct EL
+        # entitlement, but may use EL converted from unused VL.
+        rules.validate_category("EL", "faculty")
 
     def test_restricted_holiday_must_be_one_published_date(self):
         holiday = date(2026, 10, 2)
