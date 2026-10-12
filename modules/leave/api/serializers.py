@@ -114,6 +114,15 @@ class CalendarSerializer(serializers.ModelSerializer):
                   "published_at", "published_by_user_id")
         read_only_fields = ("id", "is_published", "published_at", "published_by_user_id")
 
+    def validate(self, attrs):
+        if self.instance and self.instance.is_published:
+            protected = {"year", "kind", "dates"}
+            if protected.intersection(attrs):
+                raise serializers.ValidationError(
+                    "A published calendar is immutable. Create and publish a replacement calendar."
+                )
+        return attrs
+
 
 class WorkflowStepSerializer(serializers.ModelSerializer):
     class Meta:
