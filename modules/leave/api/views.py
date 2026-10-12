@@ -1,13 +1,21 @@
+"""ELM HTTP boundary. Domain failures are translated to stable API errors."""
 from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
 from fusion_auth.permissions import HasModuleGrant, HasPermission
-from core.api.exceptions import PermissionDeniedError
+from core.api.exceptions import ConflictError
 from modules.leave.api import serializers as s
+from modules.leave.domain.rules import PolicyViolation
+from modules.leave.models import (
+    LeaveApplication, LeaveBalance, LeaveCalendar, LeaveLifecycleRequest,
+    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep,
+)
 from modules.leave.selectors import applications as selectors
 from modules.leave.services import applications as service
-from modules.leave.models import LeaveApplication, LeaveBalance
+from modules.leave.services import lifecycle
+
 
 MODULE = HasModuleGrant("employee_leave_management")
 P_SELF = "leave.application.view_self"
@@ -18,6 +26,15 @@ P_SANCTION = "leave.workflow.sanction"
 
 def actor(request):
     return request.principal
+
+
+def _run(call, *args, **kwargs):
+    try:
+        return call(*args, **kwargs)
+    except PolicyViolation as exc:
+        raise ConflictError(str(exc), code=exc.code) from exc
+    except service.workflow.WorkflowConfigurationError as exc:
+        raise ConflictError(str(exc), code="workflow_configuration_error") from exc
 
 
 class MyApplicationsView(generics.ListAPIView):
@@ -32,7 +49,7 @@ class ApplyView(APIView):
     def post(self, request):
         payload = s.LeaveApplySerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        app = service.apply(actor=actor(request), **payload.validated_data)
+        app = _run(service.apply, actor=actor(request), **payload.validated_data)
         return Response(s.LeaveApplicationSerializer(app).data, status=status.HTTP_201_CREATED)
 
 
@@ -48,7 +65,18 @@ class SubstituteResponseView(APIView):
     def post(self, request, pk):
         payload = s.SubstituteResponseSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        app = service.respond_substitute(application_id=pk, actor=actor(request), **payload.validated_data)
+        app = _run(service.respond_substitute, application_id=pk,
+                   actor=actor(request), **payload.validated_data)
+        return Response(s.LeaveApplicationSerializer(app).data)
+
+
+class ReplacementSubstituteView(APIView):
+    permission_classes = [MODULE, HasPermission(P_CREATE)]
+    def post(self, request, pk):
+        payload = s.ReplacementSubstituteSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        app = _run(service.nominate_replacement, application_id=pk,
+                   actor=actor(request), **payload.validated_data)
         return Response(s.LeaveApplicationSerializer(app).data)
 
 
@@ -57,7 +85,8 @@ class DecisionView(APIView):
     def post(self, request, pk):
         payload = s.DecisionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
-        app = service.decide(application_id=pk, actor=actor(request), **payload.validated_data)
+        app = _run(service.decide, application_id=pk, actor=actor(request),
+                   **payload.validated_data)
         return Response(s.LeaveApplicationSerializer(app).data)
 
 
@@ -74,3 +103,102 @@ class InboxView(generics.ListAPIView):
     permission_classes = [MODULE, HasPermission(P_REVIEW, P_SANCTION)]
     def get_queryset(self):
         return selectors.assigned_inbox(actor(self.request).user_id)
+
+
+class CancellationView(APIView):
+    permission_classes = [MODULE, HasPermission("leave.application.cancel")]
+    def post(self, request, pk):
+        payload = s.CancellationSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        item = _run(lifecycle.request_cancellation, application_id=pk,
+                    actor=actor(request), **payload.validated_data)
+        return Response(s.LifecycleRequestSerializer(item).data, status=201)
+
+
+class ExtensionView(APIView):
+    permission_classes = [MODULE, HasPermission("leave.application.extend")]
+    def post(self, request, pk):
+        payload = s.ExtensionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        item = _run(lifecycle.request_extension, application_id=pk,
+                    actor=actor(request), **payload.validated_data)
+        return Response(s.LifecycleRequestSerializer(item).data, status=201)
+
+
+class ResumptionView(APIView):
+    permission_classes = [MODULE, HasPermission("leave.application.resume")]
+    def post(self, request, pk):
+        payload = s.ResumptionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        item = _run(lifecycle.submit_resumption, application_id=pk,
+                    actor=actor(request), **payload.validated_data)
+        return Response(s.LifecycleRequestSerializer(item).data, status=201)
+
+
+class LifecycleDecisionView(APIView):
+    permission_classes = [MODULE, HasPermission(P_REVIEW, P_SANCTION)]
+    def post(self, request, pk):
+        payload = s.LifecycleDecisionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        item = _run(lifecycle.decide_lifecycle, request_id=pk,
+                    actor=actor(request), **payload.validated_data)
+        return Response(s.LifecycleRequestSerializer(item).data)
+
+
+class MyLifecycleRequestsView(generics.ListAPIView):
+    serializer_class = s.LifecycleRequestSerializer
+    permission_classes = [MODULE, HasPermission(P_SELF)]
+    def get_queryset(self):
+        return LeaveLifecycleRequest.objects.filter(
+            application__user_id=actor(self.request).user_id
+        ).order_by("-created_at")
+
+
+class PolicyAdminView(generics.ListCreateAPIView):
+    queryset = LeavePolicy.objects.all().order_by("category")
+    serializer_class = s.PolicySerializer
+    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+
+
+class CalendarAdminView(generics.ListCreateAPIView):
+    queryset = LeaveCalendar.objects.all().order_by("-year", "kind")
+    serializer_class = s.CalendarSerializer
+    permission_classes = [MODULE, HasPermission("leave.calendar.manage")]
+
+
+class CalendarPublishView(APIView):
+    permission_classes = [MODULE, HasPermission("leave.calendar.manage")]
+    def post(self, request, pk):
+        calendar = LeaveCalendar.objects.filter(pk=pk).first()
+        if calendar is None:
+            from core.api.exceptions import NotFoundError
+            raise NotFoundError("No such calendar.")
+        if not isinstance(calendar.dates, list) or not calendar.dates:
+            raise ConflictError("A calendar must contain at least one date.", code="invalid_calendar")
+        from datetime import date
+        try:
+            dates = [date.fromisoformat(value) for value in calendar.dates]
+        except (TypeError, ValueError) as exc:
+            raise ConflictError("Calendar dates must be ISO YYYY-MM-DD values.", code="invalid_calendar") from exc
+        if len(dates) != len(set(dates)) or any(d.year != calendar.year for d in dates):
+            raise ConflictError("Calendar dates must be unique and belong to the selected year.", code="invalid_calendar")
+        from django.utils import timezone as tz
+        LeaveCalendar.objects.filter(year=calendar.year, kind=calendar.kind,
+                                     is_published=True).exclude(pk=calendar.pk).update(is_published=False)
+        calendar.is_published = True
+        calendar.published_at = tz.now()
+        calendar.published_by_user_id = actor(request).user_id
+        calendar.save(update_fields=["is_published", "published_at", "published_by_user_id", "updated_at"])
+        return Response(s.CalendarSerializer(calendar).data)
+
+
+class WorkflowAdminView(generics.ListCreateAPIView):
+    queryset = LeaveWorkflowStep.objects.all().order_by("category", "sequence")
+    serializer_class = s.WorkflowStepSerializer
+    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+
+
+class SLAAdminView(generics.ListCreateAPIView):
+    queryset = LeaveSLAConfig.objects.all().order_by("task_type")
+    serializer_class = s.SLAConfigSerializer
+    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
