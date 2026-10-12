@@ -299,3 +299,48 @@ def withdraw(*, application_id, actor):
         action="withdraw", actor_user_id=actor.user_id,
     )
     return app
+
+@transaction.atomic
+def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
+                              purpose, sanction_reference, sanction_date,
+                              station_leave_required=False, station_leave_details=None):
+    """Synchronize a leave already sanctioned through an authorized offline route."""
+    if not sanction_reference.strip():
+        raise rules.PolicyViolation("sanction_evidence_required", "A sanction/reference number is required.")
+    employee_kind = _employee_kind(user_id)
+    rules.validate_category(category, employee_kind)
+    if end_date < start_date:
+        raise rules.PolicyViolation("invalid_period", "End date must not precede start date.")
+    if category == "RH":
+        rules.validate_rh(start_date, end_date, _calendar_dates(start_date, end_date, "rh"))
+    if category == "VL":
+        periods = list(LeaveVacationPeriod.objects.filter(
+            is_active=True, start_date__lte=start_date, end_date__gte=end_date
+        ).values_list("start_date", "end_date"))
+        rules.validate_vacation(start_date, end_date, periods)
+    _validate_overlap(user_id, start_date, end_date, category, "")
+    days = _requested_days(category, start_date, end_date, "")
+    balance = _balance_for_update(user_id, category, start_date.year)
+    if balance.available < days:
+        raise rules.PolicyViolation("insufficient_balance", "The offline-sanctioned entry exceeds the available leave balance.")
+    app = LeaveApplication.objects.create(
+        user_id=user_id, category=category, start_date=start_date, end_date=end_date,
+        purpose=purpose, employee_kind=employee_kind, requested_days=days,
+        status=sm.APPROVED, station_leave_required=station_leave_required,
+        station_leave_details=station_leave_details or {},
+        final_decision_by_user_id=actor.user_id,
+        final_decision_at=timezone.now(),
+        decision_note=f"Offline sanction reference: {sanction_reference}; sanction date: {sanction_date.isoformat()}",
+    )
+    balance.consumed += days
+    balance.save(update_fields=["consumed", "updated_at"])
+    LeaveLedgerEntry.objects.create(
+        user_id=user_id, application=app, category=category, amount=days,
+        entry_type="debit", reference=f"offline-sanction:{sanction_reference}",
+    )
+    LeaveApplicationEvent.objects.create(
+        application=app, from_status="", to_status=sm.APPROVED,
+        action="record_offline_sanction", actor_user_id=actor.user_id,
+        note=f"{sanction_reference} ({sanction_date.isoformat()})",
+    )
+    return app
