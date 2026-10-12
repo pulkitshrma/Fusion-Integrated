@@ -1,0 +1,29 @@
+name: ELM schema preview (temporary)
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/employee-leave-management]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  schema:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.test
+      DB_PASSWORD: postgres
+      DB_HOST: 127.0.0.1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv venv --python 3.12 .venv
+      - run: uv pip install --python .venv/bin/python -e ".[dev]"
+      - name: Generate OpenAPI
+        run: .venv/bin/python manage.py spectacular --fail-on-warn --file /tmp/elm-openapi.yaml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: elm-openapi-schema
+          path: /tmp/elm-openapi.yaml
+          if-no-files-found: error
