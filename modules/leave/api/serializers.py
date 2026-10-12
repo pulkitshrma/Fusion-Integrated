@@ -62,7 +62,7 @@ class LeaveBalanceSerializer(serializers.ModelSerializer):
     available = serializers.DecimalField(max_digits=8, decimal_places=2, read_only=True)
     class Meta:
         model = LeaveBalance
-        fields = ("category", "year", "credited", "carried_forward", "consumed", "available")
+        fields = ("category", "year", "employee_kind", "credited", "carried_forward", "consumed", "available")
 
 
 class LifecycleRequestSerializer(serializers.ModelSerializer):
