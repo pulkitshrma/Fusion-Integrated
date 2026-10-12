@@ -104,7 +104,12 @@ class PolicySerializer(serializers.ModelSerializer):
         model = LeavePolicy
         fields = ("id", "category", "annual_entitlement", "carry_forward",
                   "faculty_only", "non_faculty_only", "medical_evidence_required", "is_active")
-        read_only_fields = ("id", "category")
+        read_only_fields = ("id", "category", "carry_forward", "faculty_only", "non_faculty_only")
+
+    def validate_annual_entitlement(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Annual entitlement cannot be negative.")
+        return value
 
 
 class CalendarSerializer(serializers.ModelSerializer):
