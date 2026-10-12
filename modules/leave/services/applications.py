@@ -73,6 +73,16 @@ def _employee_kind(user_id):
     return kind
 
 
+def _validate_evidence(category, supporting_evidence_reference):
+    policy = LeavePolicy.objects.filter(category=category, is_active=True).first()
+    if policy is None:
+        raise rules.PolicyViolation("policy_missing", f"No active policy is configured for {category}.")
+    if policy.medical_evidence_required and category == "COL" and not supporting_evidence_reference:
+        raise rules.PolicyViolation("medical_evidence_required", "The current COL policy requires supporting medical evidence.")
+    if supporting_evidence_reference and category != "COL":
+        raise rules.PolicyViolation("evidence_not_applicable", "Supporting medical evidence reference is applicable only to COL.")
+
+
 def _balance_for_update(user_id, category, year, employee_kind):
     policy = LeavePolicy.objects.filter(category=category, is_active=True).first()
     if policy is None:
@@ -108,10 +118,11 @@ def _validate_substitute(*, applicant_id, substitute_id, start, end):
 @transaction.atomic
 def apply(*, actor, category, start_date, end_date, purpose,
           half_day="", station_leave_required=False, station_leave_details=None,
-          substitute_user_id=None):
+          substitute_user_id=None, supporting_evidence_reference=""):
     user_id = actor.user_id
     employee_kind = _employee_kind(user_id)  # never trust a request-body employee_kind
     rules.validate_category(category, employee_kind)
+    _validate_evidence(category, supporting_evidence_reference)
     if end_date < start_date:
         raise rules.PolicyViolation("invalid_period", "End date must not precede start date.")
     if half_day and category != "CL":
@@ -328,7 +339,8 @@ def withdraw(*, application_id, actor):
 @transaction.atomic
 def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
                               purpose, sanction_reference, sanction_date,
-                              station_leave_required=False, station_leave_details=None):
+                              station_leave_required=False, station_leave_details=None,
+                              supporting_evidence_reference=""):
     """Synchronize a leave already sanctioned through an authorized offline route."""
     if not sanction_reference.strip():
         raise rules.PolicyViolation("sanction_evidence_required", "A sanction/reference number is required.")
@@ -358,7 +370,7 @@ def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
     app = LeaveApplication.objects.create(
         user_id=user_id, category=category, start_date=start_date, end_date=end_date,
         actual_end_date=end_date,
-        purpose=purpose, employee_kind=employee_kind, applicant_role=(actor.active_role or ""), requested_days=days,
+        purpose=purpose, supporting_evidence_reference=supporting_evidence_reference, employee_kind=employee_kind, applicant_role=(actor.active_role or ""), requested_days=days,
         status=sm.APPROVED, station_leave_required=station_leave_required,
         station_leave_details=station_leave_details or {},
         decision_note=f"Offline sanction reference: {sanction_reference}; sanction date: {sanction_date.isoformat()}",
