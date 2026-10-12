@@ -23,7 +23,7 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeaveApplication
-        fields = ("id", "user_id", "category", "start_date", "end_date", "half_day", "purpose",
+        fields = ("id", "user_id", "category", "start_date", "end_date", "actual_end_date", "half_day", "purpose",
             "status", "requested_days", "station_leave_required", "station_leave_details",
             "substitute_user_id", "substitute_response", "current_assignee_user_id",
             "final_decision_by_user_id", "final_decision_at", "decision_note",
