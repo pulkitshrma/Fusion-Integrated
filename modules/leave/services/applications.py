@@ -138,9 +138,10 @@ def apply(*, actor, category, start_date, end_date, purpose,
         station_leave_details=station_leave_details or {},
         substitute_user_id=substitute_user_id,
     )
-    if not substitute_user_id:
-        app.current_assignee_user_id = workflow.initial_assignee(app)
-        app.save(update_fields=["current_assignee_user_id", "updated_at"])
+    app.current_assignee_user_id = (
+        substitute_user_id if substitute_user_id else workflow.initial_assignee(app)
+    )
+    app.save(update_fields=["current_assignee_user_id", "updated_at"])
     LeaveApplicationEvent.objects.create(
         application=app, from_status="", to_status=status, action="submit",
         actor_user_id=user_id,
@@ -163,7 +164,7 @@ def respond_substitute(*, application_id, actor, accept, note=""):
     old = app.status
     app.substitute_response = "accepted" if accept else "declined"
     app.status = sm.AWAITING_UNIT_HEAD if accept else sm.APPLICANT_ACTION_REQUIRED
-    app.current_assignee_user_id = workflow.initial_assignee(app) if accept else None
+    app.current_assignee_user_id = workflow.initial_assignee(app) if accept else app.user_id
     app.save(update_fields=["substitute_response", "status", "current_assignee_user_id", "updated_at"])
     LeaveSubstituteResponse.objects.create(
         application=app, substitute_user_id=actor.user_id,
@@ -201,7 +202,8 @@ def nominate_replacement(*, application_id, actor, substitute_user_id):
     app.substitute_user_id = substitute_user_id
     app.substitute_response = ""
     app.status = sm.AWAITING_SUBSTITUTE
-    app.save(update_fields=["substitute_user_id", "substitute_response", "status", "updated_at"])
+    app.current_assignee_user_id = substitute_user_id
+    app.save(update_fields=["substitute_user_id", "substitute_response", "status", "current_assignee_user_id", "updated_at"])
     LeaveApplicationEvent.objects.create(
         application=app, from_status=old, to_status=app.status,
         action="nominate_replacement", actor_user_id=actor.user_id,
