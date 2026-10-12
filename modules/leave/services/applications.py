@@ -256,7 +256,7 @@ def decide(*, application_id, actor, outcome, note=""):
         app.decision_note = note
         app.current_assignee_user_id = None
     else:
-        next_step = workflow.next_step(app, actor.user_id)
+        next_step = workflow.next_step(app, actor.user_id, current.step_type)
         if next_step is None:
             raise ConflictError("The configured route has no next Sanctioning Authority.", code="workflow_route_incomplete")
         app.status = {
