@@ -109,6 +109,17 @@ class SLAConfigSerializer(serializers.ModelSerializer):
         fields = ("id", "task_type", "reminder_after_hours",
                   "escalate_after_hours", "escalation_assignee_user_id", "is_active")
 
+    def validate(self, attrs):
+        reminder = attrs.get("reminder_after_hours",
+                             getattr(self.instance, "reminder_after_hours", None))
+        escalation = attrs.get("escalate_after_hours",
+                               getattr(self.instance, "escalate_after_hours", None))
+        if reminder is None or escalation is None or escalation <= reminder:
+            raise serializers.ValidationError(
+                "Escalation threshold must be greater than the reminder threshold."
+            )
+        return attrs
+
 
 class OfflineSanctionSerializer(serializers.Serializer):
     user_id = serializers.IntegerField(min_value=1)
