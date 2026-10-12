@@ -31,6 +31,7 @@ export default function LeaveAdminPage() {
   const createWorkflow = useLeaveMutation("/leave/admin/workflow");
   const createSla = useLeaveMutation("/leave/admin/sla");
   const updatePolicy = useLeaveMutation("/leave/admin/policies/:id", "patch");
+  const offlineSanction = useLeaveMutation("/leave/admin/offline-sanction");
 
   const [calName, setCalName] = useState("");
   const [calYear, setCalYear] = useState<number | string>(new Date().getFullYear());
@@ -47,6 +48,13 @@ export default function LeaveAdminPage() {
   const [reminder, setReminder] = useState<number | string>(24);
   const [escalation, setEscalation] = useState<number | string>(48);
   const [escalationUser, setEscalationUser] = useState<number | string>("");
+  const [offlineUser, setOfflineUser] = useState<number | string>("");
+  const [offlineCategory, setOfflineCategory] = useState<string | null>("CL");
+  const [offlineStart, setOfflineStart] = useState("");
+  const [offlineEnd, setOfflineEnd] = useState("");
+  const [offlinePurpose, setOfflinePurpose] = useState("");
+  const [offlineReference, setOfflineReference] = useState("");
+  const [offlineDate, setOfflineDate] = useState("");
 
   function success(message: string) {
     notifications.show({ color: "green", title: "Saved", message });
@@ -195,6 +203,38 @@ export default function LeaveAdminPage() {
               ))}
             </Table.Tbody>
           </Table>
+        </Card>
+
+
+        <Card withBorder padding="lg">
+          <Title order={4} mb="sm">Record an already-sanctioned offline leave</Title>
+          <Text size="xs" c="dimmed" mb="sm">Synchronizes an existing authorized sanction; this does not create a new approval.</Text>
+          <Stack gap="xs">
+            <Group grow>
+              <NumberInput label="Employee user ID" min={1} value={offlineUser} onChange={setOfflineUser} />
+              <Select label="Category" data={CATEGORIES} value={offlineCategory} onChange={setOfflineCategory} />
+            </Group>
+            <Group grow>
+              <TextInput label="Start date" type="date" value={offlineStart} onChange={(e) => setOfflineStart(e.currentTarget.value)} />
+              <TextInput label="End date" type="date" value={offlineEnd} onChange={(e) => setOfflineEnd(e.currentTarget.value)} />
+            </Group>
+            <TextInput label="Purpose" value={offlinePurpose} onChange={(e) => setOfflinePurpose(e.currentTarget.value)} />
+            <Group grow>
+              <TextInput label="Sanction reference number" value={offlineReference} onChange={(e) => setOfflineReference(e.currentTarget.value)} />
+              <TextInput label="Sanction date" type="date" value={offlineDate} onChange={(e) => setOfflineDate(e.currentTarget.value)} />
+            </Group>
+            <Group justify="flex-end">
+              <Button loading={offlineSanction.isPending}
+                disabled={!offlineUser || !offlineCategory || !offlineStart || !offlineEnd || !offlinePurpose.trim() || !offlineReference.trim() || !offlineDate}
+                onClick={() => offlineSanction.mutate({ body: {
+                  user_id: Number(offlineUser), category: offlineCategory,
+                  start_date: offlineStart, end_date: offlineEnd, purpose: offlinePurpose,
+                  sanction_reference: offlineReference, sanction_date: offlineDate,
+                } }, { onSuccess: () => success("Offline sanction synchronized"), onError: fail })}>
+                Record offline sanction
+              </Button>
+            </Group>
+          </Stack>
         </Card>
 
         <Card withBorder padding="lg">
