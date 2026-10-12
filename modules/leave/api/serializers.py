@@ -104,6 +104,7 @@ class PolicySerializer(serializers.ModelSerializer):
         model = LeavePolicy
         fields = ("id", "category", "annual_entitlement", "carry_forward",
                   "faculty_only", "non_faculty_only", "medical_evidence_required", "is_active")
+        read_only_fields = ("id", "category")
 
 
 class CalendarSerializer(serializers.ModelSerializer):
