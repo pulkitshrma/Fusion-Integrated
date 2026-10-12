@@ -11,6 +11,7 @@ urlpatterns = [
     path("applications/<int:pk>/substitute-response", views.SubstituteResponseView.as_view(), name="leave-substitute-response"),
     path("applications/<int:pk>/substitute-replacement", views.ReplacementSubstituteView.as_view(), name="leave-substitute-replacement"),
     path("applications/<int:pk>/decision", views.DecisionView.as_view(), name="leave-decision"),
+    path("lifecycle/<int:pk>/substitute-response", views.LifecycleSubstituteResponseView.as_view(), name="leave-lifecycle-substitute-response"),
     path("lifecycle/<int:pk>/decision", views.LifecycleDecisionView.as_view(), name="leave-lifecycle-decision"),
     path("lifecycle/mine", views.MyLifecycleRequestsView.as_view(), name="leave-lifecycle-mine"),
     path("balances", views.BalancesView.as_view(), name="leave-balances"),
