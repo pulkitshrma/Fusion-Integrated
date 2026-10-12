@@ -328,3 +328,13 @@ class LeaveRecordMaintenanceView(APIView):
         app = _run(service.maintain_leave_record, application_id=pk,
                    actor=actor(request), **payload.validated_data)
         return Response(s.LeaveApplicationSerializer(app).data)
+
+
+class LifecycleInboxView(generics.ListAPIView):
+    serializer_class = s.LifecycleRequestSerializer
+    permission_classes = [MODULE, HasPermission(P_REVIEW, P_SANCTION)]
+    def get_queryset(self):
+        return LeaveLifecycleRequest.objects.filter(
+            current_assignee_user_id=actor(self.request).user_id,
+            status="pending",
+        ).order_by("created_at")
