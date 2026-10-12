@@ -32,6 +32,7 @@ export default function LeaveAdminPage() {
   const createSla = useLeaveMutation("/leave/admin/sla");
   const updatePolicy = useLeaveMutation("/leave/admin/policies/:id", "patch");
   const offlineSanction = useLeaveMutation("/leave/admin/offline-sanction");
+  const maintainRecord = useLeaveMutation("/leave/admin/records/:id", "patch");
 
   const [calName, setCalName] = useState("");
   const [calYear, setCalYear] = useState<number | string>(new Date().getFullYear());
@@ -55,6 +56,9 @@ export default function LeaveAdminPage() {
   const [offlinePurpose, setOfflinePurpose] = useState("");
   const [offlineReference, setOfflineReference] = useState("");
   const [offlineDate, setOfflineDate] = useState("");
+  const [recordId, setRecordId] = useState<number | string>("");
+  const [recordPurpose, setRecordPurpose] = useState("");
+  const [recordReason, setRecordReason] = useState("");
 
   function success(message: string) {
     notifications.show({ color: "green", title: "Saved", message });
@@ -232,6 +236,25 @@ export default function LeaveAdminPage() {
                   sanction_reference: offlineReference, sanction_date: offlineDate,
                 } }, { onSuccess: () => success("Offline sanction synchronized"), onError: fail })}>
                 Record offline sanction
+              </Button>
+            </Group>
+          </Stack>
+        </Card>
+
+
+        <Card withBorder padding="lg">
+          <Title order={4} mb="sm">Maintain an authorized leave record</Title>
+          <Text size="xs" c="dimmed" mb="sm">Only descriptive fields are editable here. Dates, category, status and balances remain governed by their workflows and ledger.</Text>
+          <Stack gap="xs">
+            <NumberInput label="Application reference ID" min={1} value={recordId} onChange={setRecordId} />
+            <TextareaPlaceholder value={recordPurpose} onChange={setRecordPurpose} />
+            <TextInput label="Correction reason (required)" value={recordReason} onChange={(e) => setRecordReason(e.currentTarget.value)} />
+            <Group justify="flex-end">
+              <Button loading={maintainRecord.isPending} disabled={!recordId || !recordPurpose.trim() || !recordReason.trim()}
+                onClick={() => maintainRecord.mutate({ id: Number(recordId), body: {
+                  purpose: recordPurpose, correction_note: recordReason,
+                } }, { onSuccess: () => success("Leave record corrected"), onError: fail })}>
+                Save correction
               </Button>
             </Group>
           </Stack>
