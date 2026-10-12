@@ -131,7 +131,8 @@ def apply(*, actor, category, start_date, end_date, purpose,
     status = sm.AWAITING_SUBSTITUTE if substitute_user_id else sm.AWAITING_UNIT_HEAD
     app = LeaveApplication.objects.create(
         user_id=user_id, category=category, start_date=start_date, end_date=end_date,
-        half_day=half_day, purpose=purpose, employee_kind=employee_kind,\n        applicant_role=(actor.active_role or ""),
+        half_day=half_day, purpose=purpose, employee_kind=employee_kind,
+        applicant_role=(actor.active_role or ""),
         requested_days=days, status=status,
         station_leave_required=station_leave_required,
         station_leave_details=station_leave_details or {},
@@ -328,8 +329,6 @@ def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
         raise rules.PolicyViolation("sanction_evidence_required", "A sanction/reference number is required.")
     employee_kind = _employee_kind(user_id)
     rules.validate_category(category, employee_kind)
-    if not sanction_reference.strip():
-        raise rules.PolicyViolation("sanction_evidence_required", "A sanction/reference number is required.")
     if LeaveLedgerEntry.objects.filter(user_id=user_id, reference=f"offline-sanction:{sanction_reference}").exists():
         raise rules.PolicyViolation("duplicate_offline_sanction", "This offline sanction reference has already been recorded.")
     if station_leave_required and not station_leave_details:
