@@ -43,6 +43,7 @@ export default function MyLeavePage() {
   const [stationDetails, setStationDetails] = useState("");
   const [evidence, setEvidence] = useState("");
   const [extensionSubstitutes, setExtensionSubstitutes] = useState<Record<number, string>>({});
+  const [extensionEvidence, setExtensionEvidence] = useState<Record<number, string>>({});
   const [resumptionDetails, setResumptionDetails] = useState<Record<number, string>>({});
   const [extensionDates, setExtensionDates] = useState<Record<number, string>>({});
   const [resumptionDates, setResumptionDates] = useState<Record<number, string>>({});
@@ -161,11 +162,14 @@ export default function MyLeavePage() {
                             <TextInput size="xs" aria-label="Extension substitute user ID" placeholder="Substitute ID"
                               value={extensionSubstitutes[app.id] ?? ""}
                               onChange={(e) => setExtensionSubstitutes((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
+                            {app.category === "COL" && <TextInput size="xs" aria-label="Extension medical evidence reference" placeholder="Medical evidence reference"
+                              value={extensionEvidence[app.id] ?? ""}
+                              onChange={(e) => setExtensionEvidence((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />}
                             <Button size="xs" variant="light" disabled={!extensionDates[app.id]}
                               onClick={() => action(extend, app.id, {
                                 new_end_date: extensionDates[app.id],
                                 ...(extensionSubstitutes[app.id] ? { substitute_user_id: Number(extensionSubstitutes[app.id]) } : {}),
-                                supporting_evidence_reference: evidence,
+                                supporting_evidence_reference: extensionEvidence[app.id] ?? "",
                               }, "Extension requested")}>Extend</Button>
                             <TextInput size="xs" type="date" aria-label="Actual resumption date" value={resumptionDates[app.id] ?? ""}
                               onChange={(e) => setResumptionDates((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
