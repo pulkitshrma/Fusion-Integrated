@@ -28,9 +28,13 @@ def process_year_end(year):
             policy = LeavePolicy.objects.filter(category=balance.category, is_active=True).first()
             if policy is None:
                 raise ValueError(f"No active policy for {balance.category}")
+            next_year_credit = (
+                0 if balance.category == "EL" and balance.employee_kind == "faculty"
+                else policy.annual_entitlement
+            )
             target, _ = LeaveBalance.objects.select_for_update().get_or_create(
                 user_id=balance.user_id, category=balance.category, year=next_year,
-                defaults={"credited": policy.annual_entitlement},
+                defaults={"credited": next_year_credit, "employee_kind": balance.employee_kind},
             )
             carry_ref = f"carry-forward:{year}:{balance.category}"
             if outcome["carry"] and not _posted(balance.user_id, balance.category, carry_ref):
@@ -47,7 +51,7 @@ def process_year_end(year):
                     raise ValueError("No active EL policy exists for VL conversion")
                 el_balance, _ = LeaveBalance.objects.select_for_update().get_or_create(
                     user_id=balance.user_id, category="EL", year=next_year,
-                    defaults={"credited": 0})
+                    defaults={"credited": 0, "employee_kind": "faculty"})
                 conversion_ref = f"VL-to-EL:{year}:2-to-1"
                 if not _posted(balance.user_id, "EL", conversion_ref):
                     el_balance.credited += outcome["credit_el"]
