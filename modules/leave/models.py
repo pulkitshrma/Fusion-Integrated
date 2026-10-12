@@ -73,6 +73,7 @@ class LeaveApplication(TimeStampedModel):
     station_leave_details = models.JSONField(default=dict, blank=True)
     employee_kind = models.CharField(max_length=12, choices=[("faculty","Faculty"),("staff","Staff")])
     applicant_role = models.CharField(max_length=80, blank=True)
+    workflow_snapshot = models.JSONField(default=list, blank=True)
     substitute_user_id = models.BigIntegerField(null=True, blank=True)
     substitute_response = models.CharField(max_length=10, blank=True,
         choices=[("accepted","Accepted"),("declined","Declined")])
