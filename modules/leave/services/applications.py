@@ -11,7 +11,7 @@ from modules.leave.domain import rules
 from modules.leave.domain import state_machine as sm
 from modules.leave.models import (
     LeaveApplication, LeaveApplicationEvent, LeaveBalance, LeaveCalendar,
-    LeaveLedgerEntry, LeavePolicy, LeaveSubstituteResponse,
+    LeaveLedgerEntry, LeaveLifecycleRequest, LeavePolicy, LeaveSubstituteResponse,
     LeaveVacationPeriod,
 )
 from modules.leave.services import workflow, notifications
@@ -60,6 +60,15 @@ def _validate_overlap(user_id, start, end, category, half_day):
         "start": row.start_date, "end": row.end_date, "category": row.category,
         "half_day": row.half_day,
     } for row in rows]
+    extensions = LeaveLifecycleRequest.objects.filter(
+        application__user_id=user_id, kind="extension",
+        status__in=["pending", "awaiting_substitute", "applicant_action_required", "approved"],
+        requested_start_date__lte=end, requested_end_date__gte=start,
+    )
+    existing.extend({
+        "start": row.requested_start_date, "end": row.requested_end_date,
+        "category": row.application.category, "half_day": "",
+    } for row in extensions)
     rules.validate_overlap(start, end, existing, half_day=half_day, category=category)
 
 
