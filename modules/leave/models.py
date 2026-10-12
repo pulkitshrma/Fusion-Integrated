@@ -187,6 +187,7 @@ class LeaveLifecycleRequest(TimeStampedModel):
     substitute_user_id = models.BigIntegerField(null=True, blank=True)
     substitute_response = models.CharField(max_length=10, blank=True)
     current_assignee_user_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    current_step_type = models.CharField(max_length=20, blank=True)
     final_decision_by_user_id = models.BigIntegerField(null=True, blank=True)
     final_decision_at = models.DateTimeField(null=True, blank=True)
     decision_note = models.TextField(blank=True)
