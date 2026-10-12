@@ -8,7 +8,7 @@ from django.utils import timezone
 from core.api.exceptions import ConflictError, NotFoundError, PermissionDeniedError
 from modules.leave.domain import rules
 from modules.leave.models import (
-    LeaveApplication, LeaveApplicationEvent, LeaveBalance, LeaveLedgerEntry,
+    LeaveApplication, LeaveApplicationEvent, LeaveAttendanceSyncOutbox, LeaveBalance, LeaveLedgerEntry,
     LeaveLifecycleEvent, LeaveLifecycleRequest, LeaveVacationPeriod,
 )
 from modules.leave.services import applications, workflow, notifications
@@ -294,6 +294,19 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
                 user_id=app.user_id, application=app, category=app.category,
                 amount=amount, entry_type=entry_type, reference=f"resumption:{req.pk}",
             )
+        app.actual_end_date = req.actual_resumption_date
+        app.save(update_fields=["actual_end_date", "updated_at"])
+        LeaveAttendanceSyncOutbox.objects.create(
+            request=req, application=app, user_id=app.user_id,
+            payload={
+                "application_id": app.pk,
+                "approved_start_date": app.start_date.isoformat(),
+                "approved_end_date": app.end_date.isoformat(),
+                "actual_end_date": req.actual_resumption_date.isoformat(),
+                "balance_adjustment_days": delta,
+                "category": app.category,
+            },
+        )
     try:
         notifications.notify_user(app.user_id, f"Leave {req.kind} decision recorded",
                                   f"Your {req.kind} request {req.pk} was {req.status}. {note}")
