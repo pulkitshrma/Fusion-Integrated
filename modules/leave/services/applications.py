@@ -325,7 +325,7 @@ def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
         raise rules.PolicyViolation("insufficient_balance", "The offline-sanctioned entry exceeds the available leave balance.")
     app = LeaveApplication.objects.create(
         user_id=user_id, category=category, start_date=start_date, end_date=end_date,
-        purpose=purpose, employee_kind=employee_kind, requested_days=days,
+        purpose=purpose, employee_kind=employee_kind, applicant_role=(actor.active_role or ""), requested_days=days,
         status=sm.APPROVED, station_leave_required=station_leave_required,
         station_leave_details=station_leave_details or {},
         final_decision_by_user_id=actor.user_id,
