@@ -73,14 +73,21 @@ def _employee_kind(user_id):
     return kind
 
 
-def _balance_for_update(user_id, category, year):
+def _balance_for_update(user_id, category, year, employee_kind):
     policy = LeavePolicy.objects.filter(category=category, is_active=True).first()
     if policy is None:
         raise rules.PolicyViolation("policy_missing", f"No active policy is configured for {category}.")
+    if policy.faculty_only and employee_kind != "faculty":
+        raise rules.PolicyViolation("category_not_applicable", f"{category} is applicable only to faculty.")
+    if policy.non_faculty_only and employee_kind == "faculty" and category != "EL":
+        raise rules.PolicyViolation("category_not_applicable", f"{category} is not applicable to faculty.")
+    initial_credit = Decimal("0") if category == "EL" and employee_kind == "faculty" else policy.annual_entitlement
     balance, _ = LeaveBalance.objects.select_for_update().get_or_create(
         user_id=user_id, category=category, year=year,
-        defaults={"credited": policy.annual_entitlement},
+        defaults={"credited": initial_credit, "employee_kind": employee_kind},
     )
+    if balance.employee_kind != employee_kind:
+        raise rules.PolicyViolation("employee_kind_mismatch", "The employee type does not match the leave account.")
     return balance
 
 
@@ -125,7 +132,7 @@ def apply(*, actor, category, start_date, end_date, purpose,
         _validate_substitute(applicant_id=user_id, substitute_id=substitute_user_id,
                              start=start_date, end=end_date)
     days = _requested_days(category, start_date, end_date, half_day)
-    balance = _balance_for_update(user_id, category, start_date.year)
+    balance = _balance_for_update(user_id, category, start_date.year, employee_kind)
     if balance.available < days:
         raise rules.PolicyViolation("insufficient_balance", "Available leave balance is insufficient.")
     status = sm.AWAITING_SUBSTITUTE if substitute_user_id else sm.AWAITING_UNIT_HEAD
