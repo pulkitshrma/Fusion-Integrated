@@ -30,6 +30,7 @@ urlpatterns = [
     path("admin/workflow/<int:pk>", views.WorkflowDetailAdminView.as_view(), name="leave-admin-workflow-detail"),
     path("admin/sla/<int:pk>", views.SLADetailAdminView.as_view(), name="leave-admin-sla-detail"),
     path("admin/offline-sanction", views.OfflineSanctionRecordView.as_view(), name="leave-admin-offline-sanction"),
+    path("admin/records/<int:pk>", views.LeaveRecordMaintenanceView.as_view(), name="leave-admin-record-maintenance"),
     path("admin/reports", views.LeaveReportView.as_view(), name="leave-admin-reports"),
     path("applications/<int:pk>/export", views.ApplicationExportView.as_view(), name="leave-application-export"),
 ]
