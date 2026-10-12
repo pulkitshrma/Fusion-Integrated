@@ -357,3 +357,14 @@ class LifecycleInboxView(generics.ListAPIView):
             current_assignee_user_id=actor(self.request).user_id,
             status="pending",
         ).order_by("created_at")
+
+
+class LifecycleWithdrawView(APIView):
+    permission_classes = [MODULE, HasPermission("employee_leave_management.application.withdraw")]
+    @extend_schema(request=s.LifecycleWithdrawSerializer, responses=s.LifecycleRequestSerializer)
+    def post(self, request, pk):
+        payload = s.LifecycleWithdrawSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        item = _run(lifecycle.withdraw_lifecycle_request, request_id=pk,
+                    actor=actor(request), **payload.validated_data)
+        return Response(s.LifecycleRequestSerializer(item).data)
