@@ -5,7 +5,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterField(
             model_name="leavelifecyclerequest", name="status",
-            field=models.CharField(max_length=12, default="pending", choices=[
+            field=models.CharField(max_length=32, default="pending", choices=[
                 ("pending","Pending"), ("awaiting_substitute","Awaiting Substitute"),
                 ("applicant_action_required","Applicant Action Required"),
                 ("approved","Approved"), ("rejected","Rejected"), ("withdrawn","Withdrawn"),
