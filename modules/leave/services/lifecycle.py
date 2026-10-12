@@ -14,6 +14,13 @@ from modules.leave.models import (
 from modules.leave.services import applications, workflow, notifications
 
 
+def _effective_approved_end(application):
+    extension_end = application.lifecycle_requests.filter(
+        kind="extension", status="approved", requested_end_date__isnull=False
+    ).order_by("-requested_end_date").values_list("requested_end_date", flat=True).first()
+    return max(application.end_date, extension_end) if extension_end else application.end_date
+
+
 def _first_route_step(application):
     return workflow.route_steps(application)[0]
 
@@ -65,11 +72,12 @@ def request_extension(*, application_id, actor, new_end_date, details="", substi
         raise ConflictError("Extension is supported only for EL, COL and VL.", code="extension_not_supported")
     applications._validate_evidence(app.category, supporting_evidence_reference)
     today = timezone.localdate()
-    if not (app.start_date <= today <= app.end_date):
+    effective_end = _effective_approved_end(app)
+    if not (app.start_date <= today <= effective_end):
         raise ConflictError("Extension is available only while the approved leave is ongoing.", code="extension_not_ongoing")
-    if new_end_date <= app.end_date:
+    if new_end_date <= effective_end:
         raise ConflictError("The extension end date must be after the approved end date.", code="invalid_extension_period")
-    increment_start = app.end_date + timedelta(days=1)
+    increment_start = effective_end + timedelta(days=1)
     incremental = applications._requested_days(app.category, increment_start, new_end_date, "")
     applications._validate_overlap(app.user_id, increment_start, new_end_date, app.category, "")
     balance = applications._balance_for_update(app.user_id, app.category, app.start_date.year, app.employee_kind)
@@ -272,7 +280,8 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
             amount=amount, entry_type="debit", reference=f"extension:{req.pk}",
         )
     elif approve and req.kind == "resumption":
-        delta = (req.actual_resumption_date - app.end_date).days
+        effective_end = _effective_approved_end(app)
+        delta = (req.actual_resumption_date - effective_end).days
         if delta:
             balance = LeaveBalance.objects.select_for_update().get(
                 user_id=app.user_id, category=app.category, year=app.start_date.year)
@@ -296,7 +305,7 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
             payload={
                 "application_id": app.pk,
                 "approved_start_date": app.start_date.isoformat(),
-                "approved_end_date": app.end_date.isoformat(),
+                "approved_end_date": effective_end.isoformat(),
                 "actual_end_date": req.actual_resumption_date.isoformat(),
                 "balance_adjustment_days": delta,
                 "category": app.category,
