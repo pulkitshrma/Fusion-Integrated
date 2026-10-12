@@ -17,15 +17,15 @@ For the intended taxonomy of modules not yet built, see
 
 | Code | What it allows | Held by |
 |---|---|---|
-| `employee_leave_management.application.view_self` | View own leave applications and balances | `employee`, `faculty`, `leave_administrator`, `staff`, `unit_head` |
-| `employee_leave_management.application.create` | Apply for leave | `employee`, `faculty`, `staff` |
-| `employee_leave_management.application.withdraw` | Withdraw a pending leave request | `employee`, `faculty`, `staff` |
-| `employee_leave_management.application.cancel` | Request cancellation of approved leave | `employee`, `faculty`, `staff` |
-| `employee_leave_management.application.extend` | Request extension of ongoing leave | `employee`, `faculty`, `staff` |
-| `employee_leave_management.application.resume` | Submit resumption of duty | `employee`, `faculty`, `staff` |
+| `employee_leave_management.application.view_self` | View own leave applications and balances | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Head of Department`, `Head of Office`, `Head of Section`, `Leave Administrator`, `Registrar`, `employee`, `faculty`, `leave_administrator`, `staff`, `unit_head` |
+| `employee_leave_management.application.create` | Apply for leave | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Head of Department`, `Head of Office`, `Head of Section`, `Leave Administrator`, `Registrar`, `employee`, `faculty`, `leave_administrator`, `staff`, `unit_head` |
+| `employee_leave_management.application.withdraw` | Withdraw a pending leave request | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Head of Department`, `Head of Office`, `Head of Section`, `Leave Administrator`, `Registrar`, `employee`, `faculty`, `leave_administrator`, `staff`, `unit_head` |
+| `employee_leave_management.application.cancel` | Request cancellation of approved leave | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Head of Department`, `Head of Office`, `Head of Section`, `Leave Administrator`, `Registrar`, `employee`, `faculty`, `leave_administrator`, `staff`, `unit_head` |
+| `employee_leave_management.application.extend` | Request extension of ongoing leave | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Head of Department`, `Head of Office`, `Head of Section`, `Leave Administrator`, `Registrar`, `employee`, `faculty`, `leave_administrator`, `staff`, `unit_head` |
+| `employee_leave_management.application.resume` | Submit resumption of duty | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Head of Department`, `Head of Office`, `Head of Section`, `Leave Administrator`, `Registrar`, `employee`, `faculty`, `leave_administrator`, `staff`, `unit_head` |
 | `employee_leave_management.workflow.review` | Review leave requests | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Head of Department`, `Head of Office`, `Head of Section`, `Registrar`, `unit_head` |
 | `employee_leave_management.workflow.sanction` | Make final leave decisions | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Registrar` |
-| `employee_leave_management.substitute.respond` | Accept or decline substitute responsibility | `Head of Department`, `Head of Office`, `Head of Section`, `employee`, `faculty`, `staff`, `unit_head` |
+| `employee_leave_management.substitute.respond` | Accept or decline substitute responsibility | `Dean`, `Deputy Registrar (Estt.)`, `Director`, `Head of Department`, `Head of Office`, `Head of Section`, `Leave Administrator`, `Registrar`, `employee`, `faculty`, `leave_administrator`, `staff`, `unit_head` |
 | `employee_leave_management.calendar.manage` | Maintain and publish holiday and RH calendars | `Leave Administrator`, `leave_administrator` |
 | `employee_leave_management.policy.manage` | Maintain leave policy and hierarchy configuration | `Leave Administrator`, `leave_administrator` |
 | `employee_leave_management.records.manage` | Maintain authorized leave records | `Leave Administrator`, `leave_administrator` |
