@@ -103,14 +103,7 @@ def request_extension(*, application_id, actor, new_end_date, details="", substi
         request=request, from_status="", to_status=request_status,
         action="request_extension", actor_user_id=actor.user_id, note=details,
     )
-    if substitute_user_id:
-        try:
-            notifications.notify_user(substitute_user_id, "Extension substitute consent requested",
-                                      f"You have been nominated for extension request {request.pk}.")
-        except Exception:
-            pass
-    else:
-        notifications.notify_lifecycle_assignee(request)
+    notifications.notify_lifecycle_assignee(request)
     return request
 
 
@@ -174,11 +167,7 @@ def nominate_extension_replacement(*, request_id, actor, substitute_user_id):
         request=req, from_status=old, to_status=req.status,
         action="nominate_replacement", actor_user_id=actor.user_id,
     )
-    try:
-        notifications.notify_user(substitute_user_id, "Extension substitute consent requested",
-                                  f"You have been nominated for extension request {req.pk}.")
-    except Exception:
-        pass
+    notifications.notify_lifecycle_assignee(req)
     return req
 
 
