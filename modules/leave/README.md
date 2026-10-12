@@ -12,9 +12,9 @@ This app implements the synchronized ELM v1.4 baseline as an independent Fusion 
 - Explicit, fail-closed approval routes configured by category, organizational unit and applicant role.
 - Unit Head final decision for CL/RH; Unit Head recommendation followed by configured Establishment/Sanctioning Authority steps for SCL/EL/COL/VL.
 - Pending withdrawal; separate pre-start cancellation; separate extension and resumption requests.
-- Audited balance ledger, offline-sanction synchronization and printable text export.
-- Policy, calendar, workflow and SLA administration APIs.
-- Year-end lapse/carry-forward/VL-to-EL conversion and SLA reminder/escalation management commands.
+- Audited balance ledger, offline-sanction synchronization, printable text export and audited record maintenance.
+- Policy, calendar, workflow and SLA administration APIs, including configurable COL evidence requirements.
+- Year-end lapse/carry-forward/VL-to-EL conversion, SLA reminder/escalation commands and a durable attendance-sync outbox.
 - Employee balance/history, assigned workflow inboxes and aggregate reports.
 
 ## Database setup
@@ -52,10 +52,10 @@ Base path: `/api/v1/leave/`
 - `POST applications/{id}/cancel`, `POST applications/{id}/extend`, `POST applications/{id}/resumption`
 - `POST applications/{id}/substitute-response`, `POST applications/{id}/substitute-replacement`
 - `GET substitute/inbox`, `GET substitute/lifecycle-inbox`
-- `POST lifecycle/{id}/substitute-response`, `POST lifecycle/{id}/substitute-replacement`, `POST lifecycle/{id}/decision`
-- `GET lifecycle/mine`, `GET balances`, `GET inbox`
+- `POST lifecycle/{id}/substitute-response`, `POST lifecycle/{id}/substitute-replacement`, `POST lifecycle/{id}/decision`, `POST lifecycle/{id}/withdraw`
+- `GET lifecycle/mine`, `GET lifecycle/inbox`, `GET balances`, `GET ledger`, `GET inbox`
 - `GET applications/{id}/export`
-- `GET/POST admin/policies`, `PUT/PATCH admin/policies/{id}`
+- `GET admin/policies`, `PUT/PATCH admin/policies/{id}`
 - `GET/POST admin/calendars`, `PUT/PATCH admin/calendars/{id}`, `POST admin/calendars/{id}/publish`
 - `GET/POST admin/workflow`, `PUT/PATCH admin/workflow/{id}`
 - `GET/POST admin/sla`, `PUT/PATCH admin/sla/{id}`
@@ -72,7 +72,7 @@ python manage.py process_leave_year_end --year 2026
 python manage.py process_leave_sla
 ```
 
-Year-end processing is idempotent by leave year and ledger reference. Inspect `LeaveYearEndRun.exceptions` before treating a failed run as complete.
+Year-end processing is idempotent by leave year and ledger reference. Inspect `LeaveYearEndRun.exceptions` before treating a failed run as complete. Approved resumption writes the actual leave end date and a durable `LeaveAttendanceSyncOutbox` record. The attendance service must consume `modules.leave.contracts.list_pending_attendance_syncs` and acknowledge through `mark_attendance_sync_result`; until that consumer is connected, outbox records remain pending.
 
 ## Tests
 
