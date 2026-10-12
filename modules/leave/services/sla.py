@@ -54,7 +54,7 @@ def process_sla_thresholds(now=None):
         if config:
             emitted += _process(app, config, application=app, now=now)
     for req in LeaveLifecycleRequest.objects.filter(
-        status__in=["pending", "awaiting_substitute"],
+        status__in=["pending", "awaiting_substitute", "applicant_action_required"],
         current_assignee_user_id__isnull=False,
     ):
         config = configs.get(f"lifecycle:{req.kind}") or configs.get(req.status)
