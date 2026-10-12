@@ -14,7 +14,7 @@ from modules.leave.models import (
     LeaveLedgerEntry, LeavePolicy, LeaveSubstituteResponse,
     LeaveVacationPeriod,
 )
-from modules.leave.services import workflow
+from modules.leave.services import workflow, notifications
 
 
 PENDING = {
@@ -144,6 +144,10 @@ def apply(*, actor, category, start_date, end_date, purpose,
         application=app, from_status="", to_status=status, action="submit",
         actor_user_id=user_id,
     )
+    if substitute_user_id:
+        notifications.notify_substitute(app)
+    else:
+        notifications.notify_application_assignee(app)
     return app
 
 
@@ -169,6 +173,14 @@ def respond_substitute(*, application_id, actor, accept, note=""):
         action="substitute_accept" if accept else "substitute_decline",
         actor_user_id=actor.user_id, note=note,
     )
+    if accept:
+        notifications.notify_application_assignee(app)
+    else:
+        try:
+            notifications.notify_user(app.user_id, "Substitute declined",
+                                      f"Your leave request {app.pk} needs a replacement substitute or withdrawal.")
+        except Exception:
+            pass
     return app
 
 
@@ -193,6 +205,7 @@ def nominate_replacement(*, application_id, actor, substitute_user_id):
         application=app, from_status=old, to_status=app.status,
         action="nominate_replacement", actor_user_id=actor.user_id,
     )
+    notifications.notify_substitute(app)
     return app
 
 
@@ -255,6 +268,8 @@ def decide(*, application_id, actor, outcome, note=""):
         application=app, from_status=old, to_status=app.status,
         action=outcome, actor_user_id=actor.user_id, note=note,
     )
+    if not final:
+        notifications.notify_application_assignee(app)
     if app.status == sm.APPROVED:
         balance = LeaveBalance.objects.select_for_update().get(
             user_id=app.user_id, category=app.category, year=app.start_date.year)
