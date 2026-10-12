@@ -37,40 +37,93 @@
     "employee_leave_management": {
       "grants": {
         "Dean": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.report.view",
+          "employee_leave_management.substitute.respond",
           "employee_leave_management.workflow.review",
           "employee_leave_management.workflow.sanction"
         ],
         "Deputy Registrar (Estt.)": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.report.view",
+          "employee_leave_management.substitute.respond",
           "employee_leave_management.workflow.review",
           "employee_leave_management.workflow.sanction"
         ],
         "Director": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.report.view",
+          "employee_leave_management.substitute.respond",
           "employee_leave_management.workflow.review",
           "employee_leave_management.workflow.sanction"
         ],
         "Head of Department": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.substitute.respond",
           "employee_leave_management.workflow.review"
         ],
         "Head of Office": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.substitute.respond",
           "employee_leave_management.workflow.review"
         ],
         "Head of Section": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.substitute.respond",
           "employee_leave_management.workflow.review"
         ],
         "Leave Administrator": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.calendar.manage",
           "employee_leave_management.policy.manage",
           "employee_leave_management.records.manage",
-          "employee_leave_management.report.view"
+          "employee_leave_management.report.view",
+          "employee_leave_management.substitute.respond"
         ],
         "Registrar": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
+          "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.report.view",
+          "employee_leave_management.substitute.respond",
           "employee_leave_management.workflow.review",
           "employee_leave_management.workflow.sanction"
         ],
@@ -93,11 +146,17 @@
           "employee_leave_management.substitute.respond"
         ],
         "leave_administrator": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
           "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.calendar.manage",
           "employee_leave_management.policy.manage",
           "employee_leave_management.records.manage",
-          "employee_leave_management.report.view"
+          "employee_leave_management.report.view",
+          "employee_leave_management.substitute.respond"
         ],
         "staff": [
           "employee_leave_management.application.cancel",
@@ -109,7 +168,12 @@
           "employee_leave_management.substitute.respond"
         ],
         "unit_head": [
+          "employee_leave_management.application.cancel",
+          "employee_leave_management.application.create",
+          "employee_leave_management.application.extend",
+          "employee_leave_management.application.resume",
           "employee_leave_management.application.view_self",
+          "employee_leave_management.application.withdraw",
           "employee_leave_management.substitute.respond",
           "employee_leave_management.workflow.review"
         ]
