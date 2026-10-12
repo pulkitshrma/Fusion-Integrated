@@ -161,6 +161,9 @@ def respond_substitute(*, application_id, actor, accept, note=""):
     ).first()
     if app is None:
         raise NotFoundError("No pending substitute request assigned to you.")
+    if accept:
+        _validate_substitute(applicant_id=app.user_id, substitute_id=actor.user_id,
+                             start=app.start_date, end=app.end_date)
     old = app.status
     app.substitute_response = "accepted" if accept else "declined"
     app.status = sm.AWAITING_UNIT_HEAD if accept else sm.APPLICANT_ACTION_REQUIRED
