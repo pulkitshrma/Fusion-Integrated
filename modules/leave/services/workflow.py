@@ -50,8 +50,13 @@ def route_steps(application):
         steps = director_self
     elif application.category in {"CL", "RH"}:
         steps = [s for s in steps if s.step_type == "unit_head"]
+        if len(steps) != 1:
+            raise WorkflowConfigurationError("CL/RH requires exactly one Unit Head as final authority.")
     else:
         steps = [s for s in steps if s.step_type in {"unit_head", "establishment", "sanction"}]
+        types = [s.step_type for s in steps]
+        if types not in (["unit_head", "sanction"], ["unit_head", "establishment", "sanction"]):
+            raise WorkflowConfigurationError("Higher-sanction route must be Unit Head, optional Establishment, then Sanctioning Authority.")
     if not steps or (not director_self and steps[0].step_type != "unit_head"):
         raise WorkflowConfigurationError("The configured route must begin with a Unit Head unless Director self-sanction applies.")
     if any(s.assignee_user_id is None for s in steps):
