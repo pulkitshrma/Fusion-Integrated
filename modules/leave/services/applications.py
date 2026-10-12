@@ -107,10 +107,15 @@ def _balance_for_update(user_id, category, year, employee_kind):
     if policy.non_faculty_only and employee_kind == "faculty" and category != "EL":
         raise rules.PolicyViolation("category_not_applicable", f"{category} is not applicable to faculty.")
     initial_credit = Decimal("0") if category == "EL" and employee_kind == "faculty" else policy.annual_entitlement
-    balance, _ = LeaveBalance.objects.select_for_update().get_or_create(
+    balance, created = LeaveBalance.objects.select_for_update().get_or_create(
         user_id=user_id, category=category, year=year,
         defaults={"credited": initial_credit, "employee_kind": employee_kind},
     )
+    if created and initial_credit > 0:
+        LeaveLedgerEntry.objects.create(
+            user_id=user_id, category=category, amount=initial_credit,
+            entry_type="credit", reference=f"annual-credit:{year}:{category}",
+        )
     if balance.employee_kind != employee_kind:
         raise rules.PolicyViolation("employee_kind_mismatch", "The employee type does not match the leave account.")
     return balance
