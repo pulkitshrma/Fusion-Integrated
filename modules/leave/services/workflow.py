@@ -68,6 +68,9 @@ def route_steps(application):
     assignees = [step.assignee_user_id for step in steps]
     if len(assignees) != len(set(assignees)):
         raise WorkflowConfigurationError("Each approval step must have a distinct assignee.")
+    directory_people = get_users(assignees)
+    if any(user_id not in directory_people for user_id in assignees):
+        raise WorkflowConfigurationError("Every configured approver must exist in the institute directory.")
     for step in steps:
         if step.assignee_user_id == application.user_id and step.assignee_role.lower() != "director":
             raise WorkflowConfigurationError("An employee cannot approve their own leave request.")
