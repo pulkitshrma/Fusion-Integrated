@@ -150,6 +150,7 @@ class OfflineSanctionSerializer(serializers.Serializer):
     sanction_date = serializers.DateField()
     station_leave_required = serializers.BooleanField(required=False, default=False)
     station_leave_details = serializers.DictField(required=False, default=dict)
+    supporting_evidence_reference = serializers.CharField(max_length=250, required=False, allow_blank=True)
 
 
 class LeaveLedgerEntrySerializer(serializers.ModelSerializer):
