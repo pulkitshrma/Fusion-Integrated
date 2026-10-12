@@ -16,6 +16,7 @@ urlpatterns = [
     path("lifecycle/<int:pk>/decision", views.LifecycleDecisionView.as_view(), name="leave-lifecycle-decision"),
     path("lifecycle/mine", views.MyLifecycleRequestsView.as_view(), name="leave-lifecycle-mine"),
     path("balances", views.BalancesView.as_view(), name="leave-balances"),
+    path("ledger", views.MyLedgerView.as_view(), name="leave-ledger"),
     path("inbox", views.InboxView.as_view(), name="leave-inbox"),
     path("substitute/inbox", views.SubstituteInboxView.as_view(), name="leave-substitute-inbox"),
     path("substitute/lifecycle-inbox", views.LifecycleSubstituteInboxView.as_view(), name="leave-substitute-lifecycle-inbox"),
