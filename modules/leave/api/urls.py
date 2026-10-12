@@ -14,6 +14,7 @@ urlpatterns = [
     path("lifecycle/<int:pk>/substitute-response", views.LifecycleSubstituteResponseView.as_view(), name="leave-lifecycle-substitute-response"),
     path("lifecycle/<int:pk>/substitute-replacement", views.LifecycleReplacementSubstituteView.as_view(), name="leave-lifecycle-substitute-replacement"),
     path("lifecycle/<int:pk>/decision", views.LifecycleDecisionView.as_view(), name="leave-lifecycle-decision"),
+    path("lifecycle/<int:pk>/withdraw", views.LifecycleWithdrawView.as_view(), name="leave-lifecycle-withdraw"),
     path("lifecycle/mine", views.MyLifecycleRequestsView.as_view(), name="leave-lifecycle-mine"),
     path("lifecycle/inbox", views.LifecycleInboxView.as_view(), name="leave-lifecycle-inbox"),
     path("balances", views.BalancesView.as_view(), name="leave-balances"),
