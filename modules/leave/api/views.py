@@ -105,6 +105,26 @@ class InboxView(generics.ListAPIView):
         return selectors.assigned_inbox(actor(self.request).user_id)
 
 
+class SubstituteInboxView(generics.ListAPIView):
+    serializer_class = s.LeaveApplicationSerializer
+    permission_classes = [MODULE, HasPermission("leave.substitute.respond")]
+    def get_queryset(self):
+        return LeaveApplication.objects.filter(
+            substitute_user_id=actor(self.request).user_id,
+            status="awaiting_substitute",
+        ).order_by("created_at")
+
+
+class LifecycleSubstituteInboxView(generics.ListAPIView):
+    serializer_class = s.LifecycleRequestSerializer
+    permission_classes = [MODULE, HasPermission("leave.substitute.respond")]
+    def get_queryset(self):
+        return LeaveLifecycleRequest.objects.filter(
+            substitute_user_id=actor(self.request).user_id,
+            status="awaiting_substitute",
+        ).order_by("created_at")
+
+
 class CancellationView(APIView):
     permission_classes = [MODULE, HasPermission("leave.application.cancel")]
     def post(self, request, pk):
