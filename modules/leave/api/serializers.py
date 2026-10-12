@@ -23,7 +23,7 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LeaveApplication
-        fields = ("id", "user_id", "category", "start_date", "end_date", "actual_end_date", "half_day", "purpose",
+        fields = ("id", "user_id", "category", "start_date", "end_date", "actual_end_date", "half_day", "purpose", "supporting_evidence_reference",
             "status", "requested_days", "station_leave_required", "station_leave_details",
             "substitute_user_id", "substitute_response", "current_assignee_user_id",
             "final_decision_by_user_id", "final_decision_at", "decision_note",
@@ -38,6 +38,7 @@ class LeaveApplySerializer(serializers.Serializer):
     half_day = serializers.ChoiceField(choices=("", "first_half", "second_half"),
                                        required=False, allow_blank=True)
     purpose = serializers.CharField(max_length=2000)
+    supporting_evidence_reference = serializers.CharField(max_length=250, required=False, allow_blank=True)
     station_leave_required = serializers.BooleanField(required=False, default=False)
     station_leave_details = serializers.DictField(required=False, default=dict)
     substitute_user_id = serializers.IntegerField(required=False, allow_null=True)
@@ -72,7 +73,7 @@ class LifecycleRequestSerializer(serializers.ModelSerializer):
         model = LeaveLifecycleRequest
         fields = ("id", "application_id", "kind", "status", "requested_start_date",
                   "requested_end_date", "actual_resumption_date", "details",
-                  "current_assignee_user_id", "final_decision_by_user_id",
+                  "supporting_evidence_reference", "current_assignee_user_id", "final_decision_by_user_id",
                   "final_decision_at", "decision_note", "events", "created_at", "updated_at")
         read_only_fields = fields
 
@@ -84,12 +85,13 @@ class CancellationSerializer(serializers.Serializer):
 class ExtensionSerializer(serializers.Serializer):
     new_end_date = serializers.DateField()
     details = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+    supporting_evidence_reference = serializers.CharField(max_length=250, required=False, allow_blank=True)
     substitute_user_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
 
 class ResumptionSerializer(serializers.Serializer):
     actual_resumption_date = serializers.DateField()
-    details = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+    details = serializers.CharField(max_length=2000, required=True, allow_blank=False)
 
 
 class LifecycleDecisionSerializer(serializers.Serializer):
@@ -101,7 +103,7 @@ class PolicySerializer(serializers.ModelSerializer):
     class Meta:
         model = LeavePolicy
         fields = ("id", "category", "annual_entitlement", "carry_forward",
-                  "faculty_only", "non_faculty_only", "is_active")
+                  "faculty_only", "non_faculty_only", "medical_evidence_required", "is_active")
 
 
 class CalendarSerializer(serializers.ModelSerializer):
