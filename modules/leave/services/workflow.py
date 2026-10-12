@@ -56,6 +56,9 @@ def route_steps(application):
         raise WorkflowConfigurationError("The configured route must begin with a Unit Head unless Director self-sanction applies.")
     if any(s.assignee_user_id is None for s in steps):
         raise WorkflowConfigurationError("Every active workflow step must have an explicit assignee user.")
+    assignees = [step.assignee_user_id for step in steps]
+    if len(assignees) != len(set(assignees)):
+        raise WorkflowConfigurationError("Each approval step must have a distinct assignee.")
     for step in steps:
         if step.assignee_user_id == application.user_id and step.assignee_role.lower() != "director":
             raise WorkflowConfigurationError("An employee cannot approve their own leave request.")
@@ -66,9 +69,10 @@ def initial_assignee(application):
     return route_steps(application)[0].assignee_user_id
 
 
-def next_step(application, current_assignee_user_id):
+def next_step(application, current_assignee_user_id, current_step_type=None):
     steps = route_steps(application)
     for index, step in enumerate(steps):
-        if step.assignee_user_id == current_assignee_user_id:
+        if (step.assignee_user_id == current_assignee_user_id
+                and (current_step_type is None or step.step_type == current_step_type)):
             return steps[index + 1] if index + 1 < len(steps) else None
     raise WorkflowConfigurationError("Current assignee is not part of the configured route.")
