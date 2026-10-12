@@ -222,3 +222,18 @@ class LeaveSLAEvent(models.Model):
 
     class Meta:
         db_table = "leave_sla_event"
+
+
+class LeaveLifecycleEvent(models.Model):
+    request = models.ForeignKey(LeaveLifecycleRequest, on_delete=models.CASCADE,
+                                related_name="events")
+    from_status = models.CharField(max_length=12, blank=True)
+    to_status = models.CharField(max_length=12)
+    action = models.CharField(max_length=32)
+    actor_user_id = models.BigIntegerField(null=True, blank=True)
+    note = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "leave_lifecycle_event"
+        ordering = ["created_at", "id"]
