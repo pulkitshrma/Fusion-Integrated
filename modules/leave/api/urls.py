@@ -21,4 +21,11 @@ urlpatterns = [
     path("admin/calendars/<int:pk>/publish", views.CalendarPublishView.as_view(), name="leave-calendar-publish"),
     path("admin/workflow", views.WorkflowAdminView.as_view(), name="leave-admin-workflow"),
     path("admin/sla", views.SLAAdminView.as_view(), name="leave-admin-sla"),
+    path("admin/policies/<int:pk>", views.PolicyDetailAdminView.as_view(), name="leave-admin-policy-detail"),
+    path("admin/calendars/<int:pk>", views.CalendarDetailAdminView.as_view(), name="leave-admin-calendar-detail"),
+    path("admin/workflow/<int:pk>", views.WorkflowDetailAdminView.as_view(), name="leave-admin-workflow-detail"),
+    path("admin/sla/<int:pk>", views.SLADetailAdminView.as_view(), name="leave-admin-sla-detail"),
+    path("admin/offline-sanction", views.OfflineSanctionRecordView.as_view(), name="leave-admin-offline-sanction"),
+    path("admin/reports", views.LeaveReportView.as_view(), name="leave-admin-reports"),
+    path("applications/<int:pk>/export", views.ApplicationExportView.as_view(), name="leave-application-export"),
 ]
