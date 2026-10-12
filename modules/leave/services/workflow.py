@@ -52,8 +52,8 @@ def route_steps(application):
         steps = [s for s in steps if s.step_type == "unit_head"]
     else:
         steps = [s for s in steps if s.step_type in {"unit_head", "establishment", "sanction"}]
-    if not steps or steps[0].step_type != "unit_head":
-        raise WorkflowConfigurationError("The configured route must begin with a Unit Head.")
+    if not steps or (not director_self and steps[0].step_type != "unit_head"):
+        raise WorkflowConfigurationError("The configured route must begin with a Unit Head unless Director self-sanction applies.")
     if any(s.assignee_user_id is None for s in steps):
         raise WorkflowConfigurationError("Every active workflow step must have an explicit assignee user.")
     for step in steps:
