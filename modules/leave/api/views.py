@@ -1,5 +1,5 @@
 """ELM HTTP boundary. Domain failures are translated to stable API errors."""
-from django.utils import timezone
+from django.utils import timezone\nfrom django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -10,7 +10,7 @@ from modules.leave.api import serializers as s
 from modules.leave.domain.rules import PolicyViolation
 from modules.leave.models import (
     LeaveApplication, LeaveBalance, LeaveCalendar, LeaveLifecycleRequest,
-    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep,
+    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep, LeaveSLAEvent,
 )
 from modules.leave.selectors import applications as selectors
 from modules.leave.services import applications as service
@@ -212,3 +212,70 @@ class SLAAdminView(generics.ListCreateAPIView):
     queryset = LeaveSLAConfig.objects.all().order_by("task_type")
     serializer_class = s.SLAConfigSerializer
     permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+
+
+class OfflineSanctionRecordView(APIView):
+    permission_classes = [MODULE, HasPermission("leave.records.manage")]
+    def post(self, request):
+        payload = s.OfflineSanctionSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        app = _run(service.record_offline_sanctioned, actor=actor(request),
+                   **payload.validated_data)
+        return Response(s.LeaveApplicationSerializer(app).data, status=201)
+
+
+class PolicyDetailAdminView(generics.RetrieveUpdateAPIView):
+    queryset = LeavePolicy.objects.all()
+    serializer_class = s.PolicySerializer
+    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+
+
+class CalendarDetailAdminView(generics.RetrieveUpdateAPIView):
+    queryset = LeaveCalendar.objects.all()
+    serializer_class = s.CalendarSerializer
+    permission_classes = [MODULE, HasPermission("leave.calendar.manage")]
+
+
+class WorkflowDetailAdminView(generics.RetrieveUpdateAPIView):
+    queryset = LeaveWorkflowStep.objects.all()
+    serializer_class = s.WorkflowStepSerializer
+    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+
+
+class SLADetailAdminView(generics.RetrieveUpdateAPIView):
+    queryset = LeaveSLAConfig.objects.all()
+    serializer_class = s.SLAConfigSerializer
+    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+
+
+class ApplicationExportView(APIView):
+    permission_classes = [MODULE, HasPermission(P_SELF, P_REVIEW, P_SANCTION)]
+    def get(self, request, pk):
+        item = LeaveApplication.objects.filter(pk=pk).first()
+        if item is None:
+            from core.api.exceptions import NotFoundError
+            raise NotFoundError("No such leave application.")
+        principal = actor(request)
+        if item.user_id != principal.user_id and item.current_assignee_user_id != principal.user_id:
+            if not principal.has_permission("leave.report.view"):
+                from core.api.exceptions import PermissionDeniedError
+                raise PermissionDeniedError("You cannot export this leave application.")
+        body = (
+            "EMPLOYEE LEAVE APPLICATION\\n"
+            f"Reference: {item.pk}\\nEmployee user ID: {item.user_id}\\n"
+            f"Category: {item.category}\\nPeriod: {item.start_date} to {item.end_date}\\n"
+            f"Requested days: {item.requested_days}\\nPurpose: {item.purpose}\\n"
+            f"Status: {item.status}\\nStation Leave: {item.station_leave_required}\\n"
+            f"Station Leave details: {item.station_leave_details}\\n"
+            f"Final decision: {item.decision_note}\\n"
+        )
+        return HttpResponse(body, content_type="text/plain; charset=utf-8")
+
+
+class LeaveReportView(APIView):
+    permission_classes = [MODULE, HasPermission("leave.report.view")]
+    def get(self, request):
+        from django.db.models import Count
+        by_status = list(LeaveApplication.objects.values("status").annotate(count=Count("id")).order_by("status"))
+        by_category = list(LeaveApplication.objects.values("category").annotate(count=Count("id")).order_by("category"))
+        return Response({"applications_by_status": by_status, "applications_by_category": by_category})
