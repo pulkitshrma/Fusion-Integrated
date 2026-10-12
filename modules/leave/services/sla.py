@@ -18,8 +18,11 @@ def _process(task, config, *, application=None, lifecycle_request=None, assigned
     if age_hours >= config.reminder_after_hours and not LeaveSLAEvent.objects.filter(
         **base_filter, event_type="reminder"
     ).exists():
-        notify_user(task.current_assignee_user_id, "Leave action reminder",
-                    f"A leave workflow task is still pending. Reference: {task.pk}.")
+        try:
+            notify_user(task.current_assignee_user_id, "Leave action reminder",
+                        f"A leave workflow task is still pending. Reference: {task.pk}.")
+        except Exception:
+            pass
         LeaveSLAEvent.objects.create(**event_filter, event_type="reminder",
             recipient_user_id=task.current_assignee_user_id,
             details={"assignment_updated_at": assignment_key, "task_type": config.task_type})
@@ -27,8 +30,11 @@ def _process(task, config, *, application=None, lifecycle_request=None, assigned
     if (age_hours >= config.escalate_after_hours
         and config.escalation_assignee_user_id
         and not LeaveSLAEvent.objects.filter(**base_filter, event_type="escalation").exists()):
-        notify_user(config.escalation_assignee_user_id, "Leave workflow escalation",
-                    f"A leave workflow task exceeded its escalation threshold. Reference: {task.pk}.")
+        try:
+            notify_user(config.escalation_assignee_user_id, "Leave workflow escalation",
+                        f"A leave workflow task exceeded its escalation threshold. Reference: {task.pk}.")
+        except Exception:
+            pass
         LeaveSLAEvent.objects.create(**event_filter, event_type="escalation",
             recipient_user_id=config.escalation_assignee_user_id,
             details={"assignment_updated_at": assignment_key, "task_type": config.task_type})
@@ -41,7 +47,7 @@ def process_sla_thresholds(now=None):
     emitted = 0
     configs = {c.task_type: c for c in LeaveSLAConfig.objects.filter(is_active=True)}
     for app in LeaveApplication.objects.filter(
-        status__in=["awaiting_unit_head", "awaiting_establishment", "awaiting_sanction"],
+        status__in=["awaiting_substitute", "applicant_action_required", "awaiting_unit_head", "awaiting_establishment", "awaiting_sanction"],
         current_assignee_user_id__isnull=False,
     ):
         config = configs.get(app.status)
