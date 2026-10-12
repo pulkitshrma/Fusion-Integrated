@@ -4,6 +4,8 @@ from django.http import HttpResponse
 from rest_framework import generics, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema
 
 from fusion_auth.permissions import HasModuleGrant, HasPermission
 from core.api.exceptions import ConflictError
@@ -47,6 +49,7 @@ class MyApplicationsView(generics.ListAPIView):
 
 class ApplyView(APIView):
     permission_classes = [MODULE, HasPermission(P_CREATE)]
+    @extend_schema(request=s.LeaveApplySerializer, responses={201: s.LeaveApplicationSerializer})
     def post(self, request):
         payload = s.LeaveApplySerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -56,6 +59,7 @@ class ApplyView(APIView):
 
 class WithdrawView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.application.withdraw")]
+    @extend_schema(request=None, responses=s.LeaveApplicationSerializer)
     def post(self, request, pk):
         app = service.withdraw(application_id=pk, actor=actor(request))
         return Response(s.LeaveApplicationSerializer(app).data)
@@ -63,6 +67,7 @@ class WithdrawView(APIView):
 
 class SubstituteResponseView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.substitute.respond")]
+    @extend_schema(request=s.SubstituteResponseSerializer, responses=s.LeaveApplicationSerializer)
     def post(self, request, pk):
         payload = s.SubstituteResponseSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -73,6 +78,7 @@ class SubstituteResponseView(APIView):
 
 class ReplacementSubstituteView(APIView):
     permission_classes = [MODULE, HasPermission(P_CREATE)]
+    @extend_schema(request=s.ReplacementSubstituteSerializer, responses=s.LeaveApplicationSerializer)
     def post(self, request, pk):
         payload = s.ReplacementSubstituteSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -83,6 +89,7 @@ class ReplacementSubstituteView(APIView):
 
 class DecisionView(APIView):
     permission_classes = [MODULE, HasPermission(P_REVIEW, P_SANCTION)]
+    @extend_schema(request=s.DecisionSerializer, responses=s.LeaveApplicationSerializer)
     def post(self, request, pk):
         payload = s.DecisionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -128,6 +135,7 @@ class LifecycleSubstituteInboxView(generics.ListAPIView):
 
 class CancellationView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.application.cancel")]
+    @extend_schema(request=s.CancellationSerializer, responses={201: s.LifecycleRequestSerializer})
     def post(self, request, pk):
         payload = s.CancellationSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -138,6 +146,7 @@ class CancellationView(APIView):
 
 class ExtensionView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.application.extend")]
+    @extend_schema(request=s.ExtensionSerializer, responses={201: s.LifecycleRequestSerializer})
     def post(self, request, pk):
         payload = s.ExtensionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -168,6 +177,7 @@ class LifecycleReplacementSubstituteView(APIView):
 
 class ResumptionView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.application.resume")]
+    @extend_schema(request=s.ResumptionSerializer, responses={201: s.LifecycleRequestSerializer})
     def post(self, request, pk):
         payload = s.ResumptionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -178,6 +188,7 @@ class ResumptionView(APIView):
 
 class LifecycleDecisionView(APIView):
     permission_classes = [MODULE, HasPermission(P_REVIEW, P_SANCTION)]
+    @extend_schema(request=s.LifecycleDecisionSerializer, responses=s.LifecycleRequestSerializer)
     def post(self, request, pk):
         payload = s.LifecycleDecisionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -209,6 +220,7 @@ class CalendarAdminView(generics.ListCreateAPIView):
 
 class CalendarPublishView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.calendar.manage")]
+    @extend_schema(request=None, responses=s.CalendarSerializer)
     def post(self, request, pk):
         calendar = LeaveCalendar.objects.filter(pk=pk).first()
         if calendar is None:
@@ -247,6 +259,7 @@ class SLAAdminView(generics.ListCreateAPIView):
 
 class OfflineSanctionRecordView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.records.manage")]
+    @extend_schema(request=s.OfflineSanctionSerializer, responses={201: s.LeaveApplicationSerializer})
     def post(self, request):
         payload = s.OfflineSanctionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -281,6 +294,7 @@ class SLADetailAdminView(generics.RetrieveUpdateAPIView):
 
 class ApplicationExportView(APIView):
     permission_classes = [MODULE, HasPermission(P_SELF, P_REVIEW, P_SANCTION)]
+    @extend_schema(request=None, responses={200: OpenApiTypes.STR})
     def get(self, request, pk):
         item = LeaveApplication.objects.filter(pk=pk).first()
         if item is None:
@@ -305,6 +319,7 @@ class ApplicationExportView(APIView):
 
 class LeaveReportView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.report.view")]
+    @extend_schema(request=None, responses={200: OpenApiTypes.OBJECT})
     def get(self, request):
         from django.db.models import Count
         by_status = list(LeaveApplication.objects.values("status").annotate(count=Count("id")).order_by("status"))
@@ -323,6 +338,7 @@ class MyLedgerView(generics.ListAPIView):
 
 class LeaveRecordMaintenanceView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.records.manage")]
+    @extend_schema(request=s.RecordMaintenanceSerializer, responses=s.LeaveApplicationSerializer)
     def patch(self, request, pk):
         payload = s.RecordMaintenanceSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
