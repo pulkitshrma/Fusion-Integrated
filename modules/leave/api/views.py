@@ -157,6 +157,7 @@ class ExtensionView(APIView):
 
 class LifecycleSubstituteResponseView(APIView):
     permission_classes = [MODULE, HasPermission("employee_leave_management.substitute.respond")]
+    @extend_schema(request=s.SubstituteResponseSerializer, responses=s.LifecycleRequestSerializer)
     def post(self, request, pk):
         payload = s.SubstituteResponseSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -167,6 +168,7 @@ class LifecycleSubstituteResponseView(APIView):
 
 class LifecycleReplacementSubstituteView(APIView):
     permission_classes = [MODULE, HasPermission(P_CREATE)]
+    @extend_schema(request=s.ReplacementSubstituteSerializer, responses=s.LifecycleRequestSerializer)
     def post(self, request, pk):
         payload = s.ReplacementSubstituteSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
