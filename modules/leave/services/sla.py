@@ -1,5 +1,4 @@
 """Pending-only reminder and escalation processing (EL-UC-021)."""
-from datetime import timedelta
 from django.utils import timezone
 from modules.leave.models import LeaveApplication, LeaveLifecycleRequest, LeaveSLAConfig, LeaveSLAEvent
 from modules.leave.services.notifications import notify_user
