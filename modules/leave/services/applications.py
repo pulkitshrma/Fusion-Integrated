@@ -270,6 +270,12 @@ def decide(*, application_id, actor, outcome, note=""):
     )
     if not final:
         notifications.notify_application_assignee(app)
+    else:
+        try:
+            notifications.notify_user(app.user_id, "Leave request decision recorded",
+                                      f"Your leave request {app.pk} was {app.status}. {note}")
+        except Exception:
+            pass
     if app.status == sm.APPROVED:
         balance = LeaveBalance.objects.select_for_update().get(
             user_id=app.user_id, category=app.category, year=app.start_date.year)
@@ -291,9 +297,22 @@ def withdraw(*, application_id, actor):
     if app.status not in PENDING:
         raise ConflictError("Only a pending request can be withdrawn.", code="not_withdrawable")
     old = app.status
+    old_assignee = app.current_assignee_user_id
     app.status = sm.WITHDRAWN
     app.current_assignee_user_id = None
     app.save(update_fields=["status", "current_assignee_user_id", "updated_at"])
+    if old_assignee:
+        try:
+            notifications.notify_user(old_assignee, "Leave request withdrawn",
+                                      f"Leave request {app.pk} was withdrawn by the employee.")
+        except Exception:
+            pass
+    if app.substitute_user_id:
+        try:
+            notifications.notify_user(app.substitute_user_id, "Leave request withdrawn",
+                                      f"Leave request {app.pk} was withdrawn; no substitute action is required.")
+        except Exception:
+            pass
     LeaveApplicationEvent.objects.create(
         application=app, from_status=old, to_status=app.status,
         action="withdraw", actor_user_id=actor.user_id,
