@@ -283,7 +283,7 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
                 user_id=app.user_id, category=app.category, year=app.start_date.year)
             amount = Decimal(abs(delta))
             if delta < 0:
-                amount = min(balance.consumed, amount)
+                amount = min(balance.consumed, app.requested_days, amount)
                 balance.consumed -= amount
                 entry_type = "restore"
             else:
