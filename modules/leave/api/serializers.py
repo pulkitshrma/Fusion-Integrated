@@ -166,3 +166,7 @@ class RecordMaintenanceSerializer(serializers.Serializer):
     purpose = serializers.CharField(max_length=2000, required=False)
     station_leave_details = serializers.DictField(required=False)
     correction_note = serializers.CharField(max_length=1000)
+
+
+class LifecycleWithdrawSerializer(serializers.Serializer):
+    note = serializers.CharField(max_length=500, required=False, allow_blank=True)
