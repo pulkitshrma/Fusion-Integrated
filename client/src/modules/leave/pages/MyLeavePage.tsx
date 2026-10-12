@@ -143,7 +143,7 @@ export default function MyLeavePage() {
             <Table striped>
               <Table.Thead><Table.Tr>
                 <Table.Th>Ref</Table.Th><Table.Th>Category</Table.Th><Table.Th>Period</Table.Th>
-                <Table.Th>Days</Table.Th><Table.Th>Status</Table.Th><Table.Th>Actions</Table.Th>
+                <Table.Th>Days</Table.Th><Table.Th>Status</Table.Th><Table.Th>History</Table.Th><Table.Th>Actions</Table.Th>
               </Table.Tr></Table.Thead>
               <Table.Tbody>
                 {(applications.data?.results ?? []).map((app: LeaveApplication) => (
@@ -152,6 +152,13 @@ export default function MyLeavePage() {
                     <Table.Td>{app.start_date} – {app.end_date}</Table.Td>
                     <Table.Td>{app.requested_days}</Table.Td>
                     <Table.Td><Badge variant="light">{app.status.replaceAll("_", " ")}</Badge></Table.Td>
+                    <Table.Td>
+                      <Stack gap={2}>
+                        {app.events.map((event, index) => <Text key={index} size="xs">
+                          {event.created_at.slice(0, 10)} · {event.action} · {event.to_status.replaceAll("_", " ")}
+                        </Text>)}
+                      </Stack>
+                    </Table.Td>
                     <Table.Td>
                       <Group gap={4} wrap="nowrap">
                         {["awaiting_substitute","applicant_action_required","awaiting_unit_head","awaiting_establishment","awaiting_sanction"].includes(app.status)
@@ -206,7 +213,12 @@ export default function MyLeavePage() {
         <Card withBorder padding="lg">
           <Title order={4} mb="sm">Lifecycle requests</Title>
           {(lifecycle.data?.results ?? []).map((r) => <Group key={r.id} justify="space-between" py={4}>
-            <Text size="sm">#{r.id} · {r.kind} · application #{r.application_id}</Text>
+            <Stack gap={2}>
+              <Text size="sm">#{r.id} · {r.kind} · application #{r.application_id}</Text>
+              {r.events.map((event, index) => <Text key={index} size="xs" c="dimmed">
+                {event.created_at.slice(0, 10)} · {event.action} · {event.to_status.replaceAll("_", " ")}
+              </Text>)}
+            </Stack>
             <Group gap="xs">
               <Badge variant="light">{r.status.replaceAll("_", " ")}</Badge>
               {r.status === "applicant_action_required" && r.kind === "extension" && <>
