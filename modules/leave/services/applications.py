@@ -366,7 +366,7 @@ def withdraw(*, application_id, actor):
 def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
                               purpose, sanction_reference, sanction_date,
                               station_leave_required=False, station_leave_details=None,
-                              supporting_evidence_reference=""):
+                              supporting_evidence_reference="", applicant_role=""):
     """Synchronize a leave already sanctioned through an authorized offline route."""
     if not sanction_reference.strip():
         raise rules.PolicyViolation("sanction_evidence_required", "A sanction/reference number is required.")
@@ -397,7 +397,7 @@ def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
     app = LeaveApplication.objects.create(
         user_id=user_id, category=category, start_date=start_date, end_date=end_date,
         actual_end_date=end_date,
-        purpose=purpose, supporting_evidence_reference=supporting_evidence_reference, employee_kind=employee_kind, applicant_role=(actor.active_role or ""), requested_days=days,
+        purpose=purpose, supporting_evidence_reference=supporting_evidence_reference, employee_kind=employee_kind, applicant_role=applicant_role, requested_days=days,
         status=sm.APPROVED, station_leave_required=station_leave_required,
         station_leave_details=station_leave_details or {},
         decision_note=f"Offline sanction reference: {sanction_reference}; sanction date: {sanction_date.isoformat()}",
