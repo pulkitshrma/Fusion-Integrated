@@ -42,7 +42,7 @@ def sync_vacation_periods(periods: Iterable[VacationPeriodDTO]) -> int:
     return len(rows)
 
 
-def get_vacation_periods(start: date, end: date) -> list[VacationPeriodDTO]:
+def list_vacation_periods(start: date, end: date) -> list[VacationPeriodDTO]:
     return [
         VacationPeriodDTO(external_id=row.external_id, name=row.name,
                           start_date=row.start_date, end_date=row.end_date,
