@@ -11,6 +11,7 @@ class LeavePolicy(TimeStampedModel):
     carry_forward = models.BooleanField(default=False)
     faculty_only = models.BooleanField(default=False)
     non_faculty_only = models.BooleanField(default=False)
+    medical_evidence_required = models.BooleanField(default=False)
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -65,6 +66,7 @@ class LeaveApplication(TimeStampedModel):
     half_day = models.CharField(max_length=12, blank=True,
         choices=[("first_half","First half"),("second_half","Second half")])
     purpose = models.TextField(max_length=2000)
+    supporting_evidence_reference = models.CharField(max_length=250, blank=True)
     status = models.CharField(max_length=32, choices=STATUSES, default="draft", db_index=True)
     requested_days = models.DecimalField(max_digits=7, decimal_places=2)
     station_leave_required = models.BooleanField(default=False)
@@ -187,6 +189,7 @@ class LeaveLifecycleRequest(TimeStampedModel):
     requested_end_date = models.DateField(null=True, blank=True)
     actual_resumption_date = models.DateField(null=True, blank=True)
     details = models.TextField(blank=True)
+    supporting_evidence_reference = models.CharField(max_length=250, blank=True)
     substitute_user_id = models.BigIntegerField(null=True, blank=True)
     substitute_response = models.CharField(max_length=10, blank=True)
     current_assignee_user_id = models.BigIntegerField(null=True, blank=True, db_index=True)
