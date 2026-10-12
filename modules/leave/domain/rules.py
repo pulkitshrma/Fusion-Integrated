@@ -21,8 +21,6 @@ def validate_category(category, employee_kind):
         raise PolicyViolation("unsupported_category", "Only CL, RH, SCL, EL, COL and VL are supported.")
     if category == "VL" and employee_kind != "faculty":
         raise PolicyViolation("category_not_applicable", "VL is applicable only to faculty.")
-    if category == "EL" and employee_kind == "faculty":
-        raise PolicyViolation("category_not_applicable", "This baseline grants EL directly to non-faculty employees.")
 
 
 def validate_rh(start, end, published_rh_dates):
