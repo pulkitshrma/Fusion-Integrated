@@ -40,6 +40,9 @@ export default function MyLeavePage() {
   const [substitute, setSubstitute] = useState("");
   const [station, setStation] = useState(false);
   const [stationDetails, setStationDetails] = useState("");
+  const [evidence, setEvidence] = useState("");
+  const [extensionSubstitutes, setExtensionSubstitutes] = useState<Record<number, string>>({});
+  const [resumptionDetails, setResumptionDetails] = useState<Record<number, string>>({});
   const [extensionDates, setExtensionDates] = useState<Record<number, string>>({});
   const [resumptionDates, setResumptionDates] = useState<Record<number, string>>({});
 
@@ -60,6 +63,7 @@ export default function MyLeavePage() {
     apply.mutate({
       body: {
         category, start_date: start, end_date: end, purpose,
+        supporting_evidence_reference: evidence,
         half_day: halfDay || "",
         station_leave_required: station,
         station_leave_details: station ? { details: stationDetails } : {},
@@ -67,7 +71,7 @@ export default function MyLeavePage() {
       },
     }, { onSuccess: () => {
       done("Leave application submitted");
-      setPurpose(""); setSubstitute(""); setStation(false); setStationDetails("");
+      setPurpose(""); setSubstitute(""); setStation(false); setStationDetails(""); setEvidence("");
     }, onError: failed });
   }
 
@@ -96,6 +100,7 @@ export default function MyLeavePage() {
                   data={[{ value: "first_half", label: "First half" }, { value: "second_half", label: "Second half" }]} />
               )}
               <Textarea label="Purpose / reason" value={purpose} onChange={(e) => setPurpose(e.currentTarget.value)} minRows={2} required />
+              {category === "COL" && <TextInput label="Supporting medical evidence reference (if required by policy)" value={evidence} onChange={(e) => setEvidence(e.currentTarget.value)} />}
               <TextInput label="Substitute employee user ID (if required)" value={substitute} onChange={(e) => setSubstitute(e.currentTarget.value)} />
               <Checkbox label="Station Leave required" checked={station} onChange={(e) => setStation(e.currentTarget.checked)} />
               {station && <Textarea label="Station Leave details" value={stationDetails} onChange={(e) => setStationDetails(e.currentTarget.value)} required />}
@@ -147,15 +152,31 @@ export default function MyLeavePage() {
                         {["awaiting_substitute","applicant_action_required","awaiting_unit_head","awaiting_establishment","awaiting_sanction"].includes(app.status)
                           && <Button size="xs" color="gray" variant="light" onClick={() => action(withdraw, app.id, {}, "Application withdrawn")}>Withdraw</Button>}
                         {app.status === "approved" && <>
-                          <Button size="xs" color="gray" variant="light" onClick={() => action(cancel, app.id, { details: "Employee requested cancellation" }, "Cancellation requested")}>Cancel</Button>
-                          <TextInput size="xs" type="date" aria-label="New extension end date" value={extensionDates[app.id] ?? ""}
-                            onChange={(e) => setExtensionDates((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
-                          <Button size="xs" variant="light" disabled={!extensionDates[app.id]}
-                            onClick={() => action(extend, app.id, { new_end_date: extensionDates[app.id] }, "Extension requested")}>Extend</Button>
-                          <TextInput size="xs" type="date" aria-label="Actual resumption date" value={resumptionDates[app.id] ?? ""}
-                            onChange={(e) => setResumptionDates((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
-                          <Button size="xs" variant="light" disabled={!resumptionDates[app.id]}
-                            onClick={() => action(resume, app.id, { actual_resumption_date: resumptionDates[app.id] }, "Resumption submitted")}>Resume</Button>
+                          {app.start_date > new Date().toISOString().slice(0, 10) &&
+                            <Button size="xs" color="gray" variant="light" onClick={() => action(cancel, app.id, { details: "Employee requested cancellation" }, "Cancellation requested")}>Cancel</Button>}
+                          {["EL", "COL", "VL"].includes(app.category) && <>
+                            <TextInput size="xs" type="date" aria-label="New extension end date" value={extensionDates[app.id] ?? ""}
+                              onChange={(e) => setExtensionDates((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
+                            <TextInput size="xs" aria-label="Extension substitute user ID" placeholder="Substitute ID"
+                              value={extensionSubstitutes[app.id] ?? ""}
+                              onChange={(e) => setExtensionSubstitutes((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
+                            <Button size="xs" variant="light" disabled={!extensionDates[app.id]}
+                              onClick={() => action(extend, app.id, {
+                                new_end_date: extensionDates[app.id],
+                                ...(extensionSubstitutes[app.id] ? { substitute_user_id: Number(extensionSubstitutes[app.id]) } : {}),
+                                supporting_evidence_reference: evidence,
+                              }, "Extension requested")}>Extend</Button>
+                            <TextInput size="xs" type="date" aria-label="Actual resumption date" value={resumptionDates[app.id] ?? ""}
+                              onChange={(e) => setResumptionDates((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
+                            <TextInput size="xs" aria-label="Resumption details" placeholder="Resumption details"
+                              value={resumptionDetails[app.id] ?? ""}
+                              onChange={(e) => setResumptionDetails((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
+                            <Button size="xs" variant="light" disabled={!resumptionDates[app.id] || !resumptionDetails[app.id]?.trim()}
+                              onClick={() => action(resume, app.id, {
+                                actual_resumption_date: resumptionDates[app.id], details: resumptionDetails[app.id],
+                              }, "Resumption submitted")}>Resume</Button>
+                          </>}
+                          <Button size="xs" component="a" href={"/api/v1/leave/applications/" + app.id + "/export"} target="_blank" variant="subtle">Print</Button>
                         </>}
                       </Group>
                     </Table.Td>
