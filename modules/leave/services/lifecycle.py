@@ -318,7 +318,8 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
                 amount=amount, entry_type=entry_type, reference=f"resumption:{req.pk}",
             )
         app.actual_end_date = req.actual_resumption_date
-        app.save(update_fields=["actual_end_date", "updated_at"])
+        app.status = "completed"
+        app.save(update_fields=["actual_end_date", "status", "updated_at"])
         LeaveAttendanceSyncOutbox.objects.create(
             request=req, application=app, user_id=app.user_id,
             payload={
