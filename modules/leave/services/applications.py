@@ -117,7 +117,7 @@ def _validate_substitute(*, applicant_id, substitute_id, start, end):
     if person is None or person.kind not in {"faculty", "staff"}:
         raise rules.PolicyViolation("invalid_substitute", "The nominated substitute must be another institute employee.")
     conflict = LeaveApplication.objects.filter(
-        user_id=substitute_id, status__in=[*PENDING, "approved"],
+        user_id=substitute_id, status__in=[*PENDING, "approved", "cancellation_pending"],
         start_date__lte=end, end_date__gte=start,
     ).exists()
     if conflict:
