@@ -108,3 +108,15 @@ class SLAConfigSerializer(serializers.ModelSerializer):
         model = LeaveSLAConfig
         fields = ("id", "task_type", "reminder_after_hours",
                   "escalate_after_hours", "escalation_assignee_user_id", "is_active")
+
+
+class OfflineSanctionSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField(min_value=1)
+    category = serializers.ChoiceField(choices=("CL", "RH", "SCL", "EL", "COL", "VL"))
+    start_date = serializers.DateField()
+    end_date = serializers.DateField()
+    purpose = serializers.CharField(max_length=2000)
+    sanction_reference = serializers.CharField(max_length=120)
+    sanction_date = serializers.DateField()
+    station_leave_required = serializers.BooleanField(required=False, default=False)
+    station_leave_details = serializers.DictField(required=False, default=dict)
