@@ -1,23 +1,28 @@
 from rest_framework import serializers
-from modules.leave.models import LeaveApplication, LeaveBalance
+from modules.leave.models import (
+    LeaveApplication, LeaveBalance, LeaveCalendar, LeaveLifecycleRequest,
+    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep,
+)
 
 
 class LeaveApplicationSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveApplication
-        fields = ("id","category","start_date","end_date","half_day","purpose",
-            "status","requested_days","station_leave_required","station_leave_details",
-            "substitute_user_id","substitute_response","created_at","updated_at")
-        read_only_fields = ("id","status","requested_days","substitute_response","created_at","updated_at")
+        fields = ("id", "category", "start_date", "end_date", "half_day", "purpose",
+            "status", "requested_days", "station_leave_required", "station_leave_details",
+            "substitute_user_id", "substitute_response", "current_assignee_user_id",
+            "final_decision_by_user_id", "final_decision_at", "decision_note",
+            "created_at", "updated_at")
+        read_only_fields = fields
 
 
 class LeaveApplySerializer(serializers.Serializer):
-    category = serializers.ChoiceField(choices=("CL","RH","SCL","EL","COL","VL"))
+    category = serializers.ChoiceField(choices=("CL", "RH", "SCL", "EL", "COL", "VL"))
     start_date = serializers.DateField()
     end_date = serializers.DateField()
-    half_day = serializers.ChoiceField(choices=("","first_half","second_half"), required=False, allow_blank=True)
+    half_day = serializers.ChoiceField(choices=("", "first_half", "second_half"),
+                                       required=False, allow_blank=True)
     purpose = serializers.CharField(max_length=2000)
-    employee_kind = serializers.ChoiceField(choices=("faculty","staff"))
     station_leave_required = serializers.BooleanField(required=False, default=False)
     station_leave_details = serializers.DictField(required=False, default=dict)
     substitute_user_id = serializers.IntegerField(required=False, allow_null=True)
@@ -28,8 +33,13 @@ class SubstituteResponseSerializer(serializers.Serializer):
     note = serializers.CharField(max_length=500, required=False, allow_blank=True)
 
 
+class ReplacementSubstituteSerializer(serializers.Serializer):
+    substitute_user_id = serializers.IntegerField(min_value=1)
+
+
 class DecisionSerializer(serializers.Serializer):
-    outcome = serializers.ChoiceField(choices=("approve","reject","recommended","not_recommended","route"))
+    outcome = serializers.ChoiceField(choices=("approve", "reject", "recommended",
+                                               "not_recommended", "route"))
     note = serializers.CharField(max_length=2000, required=False, allow_blank=True)
 
 
@@ -37,4 +47,63 @@ class LeaveBalanceSerializer(serializers.ModelSerializer):
     available = serializers.DecimalField(max_digits=8, decimal_places=2, read_only=True)
     class Meta:
         model = LeaveBalance
-        fields = ("category","year","credited","carried_forward","consumed","available")
+        fields = ("category", "year", "credited", "carried_forward", "consumed", "available")
+
+
+class LifecycleRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveLifecycleRequest
+        fields = ("id", "application_id", "kind", "status", "requested_start_date",
+                  "requested_end_date", "actual_resumption_date", "details",
+                  "current_assignee_user_id", "final_decision_by_user_id",
+                  "final_decision_at", "decision_note", "created_at", "updated_at")
+        read_only_fields = fields
+
+
+class CancellationSerializer(serializers.Serializer):
+    details = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+
+
+class ExtensionSerializer(serializers.Serializer):
+    new_end_date = serializers.DateField()
+    details = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+
+
+class ResumptionSerializer(serializers.Serializer):
+    actual_resumption_date = serializers.DateField()
+    details = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+
+
+class LifecycleDecisionSerializer(serializers.Serializer):
+    approve = serializers.BooleanField()
+    note = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+
+
+class PolicySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeavePolicy
+        fields = ("id", "category", "annual_entitlement", "carry_forward",
+                  "faculty_only", "non_faculty_only", "is_active")
+
+
+class CalendarSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveCalendar
+        fields = ("id", "name", "year", "kind", "dates", "is_published",
+                  "published_at", "published_by_user_id")
+        read_only_fields = ("id", "is_published", "published_at", "published_by_user_id")
+
+
+class WorkflowStepSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveWorkflowStep
+        fields = ("id", "category", "organizational_unit", "designation",
+                  "sequence", "step_type", "assignee_user_id", "assignee_role",
+                  "is_active")
+
+
+class SLAConfigSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveSLAConfig
+        fields = ("id", "task_type", "reminder_after_hours",
+                  "escalate_after_hours", "escalation_assignee_user_id", "is_active")
