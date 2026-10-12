@@ -37,11 +37,10 @@ ROLE_GRANTS = {
         "employee_leave_management.calendar.manage", "employee_leave_management.records.manage", "employee_leave_management.report.view"],
     "Leave Administrator": [*_EMPLOYEE, "employee_leave_management.policy.manage",
         "employee_leave_management.calendar.manage", "employee_leave_management.records.manage", "employee_leave_management.report.view"],
-    "Deputy Registrar (Estt.)": ["employee_leave_management.workflow.review", "employee_leave_management.workflow.sanction",
-                                 "employee_leave_management.report.view"],
-    "Dean": ["employee_leave_management.workflow.review", "employee_leave_management.workflow.sanction", "employee_leave_management.report.view"],
-    "Registrar": ["employee_leave_management.workflow.review", "employee_leave_management.workflow.sanction", "employee_leave_management.report.view"],
-    "Director": ["employee_leave_management.workflow.review", "employee_leave_management.workflow.sanction", "employee_leave_management.report.view"],
+    "Deputy Registrar (Estt.)": [*_EMPLOYEE, "employee_leave_management.workflow.review", "employee_leave_management.workflow.sanction", "employee_leave_management.report.view"],
+    "Dean": [*_EMPLOYEE, "employee_leave_management.workflow.review", "employee_leave_management.workflow.sanction", "employee_leave_management.report.view"],
+    "Registrar": [*_EMPLOYEE, "employee_leave_management.workflow.review", "employee_leave_management.workflow.sanction", "employee_leave_management.report.view"],
+    "Director": [*_EMPLOYEE, "employee_leave_management.workflow.review", "employee_leave_management.workflow.sanction", "employee_leave_management.report.view"],
 }
 NAV_ITEMS = [
     {"code":"employee_leave_management.mine","label":"My Leave","icon":"FaCalendarAlt","to":"/leave/mine",
