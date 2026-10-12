@@ -185,14 +185,7 @@ def respond_substitute(*, application_id, actor, accept, note=""):
         action="substitute_accept" if accept else "substitute_decline",
         actor_user_id=actor.user_id, note=note,
     )
-    if accept:
-        notifications.notify_application_assignee(app)
-    else:
-        try:
-            notifications.notify_user(app.user_id, "Substitute declined",
-                                      f"Your leave request {app.pk} needs a replacement substitute or withdrawal.")
-        except Exception:
-            pass
+    notifications.notify_application_assignee(app)
     return app
 
 
