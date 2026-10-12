@@ -47,7 +47,7 @@ export default function LeaveInboxPage() {
               <Table.Tbody>
                 {(inbox.data?.results ?? []).map((app: LeaveApplication) => (
                   <Table.Tr key={app.id}>
-                    <Table.Td>#{app.id}</Table.Td><Table.Td>{app.id ? app.current_assignee_user_id : "—"}</Table.Td>
+                    <Table.Td>#{app.id}</Table.Td><Table.Td>{app.user_id}</Table.Td>
                     <Table.Td>{app.category}</Table.Td><Table.Td>{app.start_date} – {app.end_date}</Table.Td>
                     <Table.Td>{app.purpose}</Table.Td>
                     <Table.Td>
