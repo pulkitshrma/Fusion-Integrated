@@ -13,7 +13,7 @@ from modules.leave.api import serializers as s
 from modules.leave.domain.rules import PolicyViolation
 from modules.leave.models import (
     LeaveApplication, LeaveBalance, LeaveCalendar, LeaveLifecycleRequest,
-    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep, LeaveSLAEvent, LeaveLedgerEntry,
+    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep, LeaveLedgerEntry,
 )
 from modules.leave.selectors import applications as selectors
 from modules.leave.services import applications as service
