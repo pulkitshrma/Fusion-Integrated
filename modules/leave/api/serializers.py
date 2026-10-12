@@ -157,6 +157,7 @@ class SLAConfigSerializer(serializers.ModelSerializer):
 
 class OfflineSanctionSerializer(serializers.Serializer):
     user_id = serializers.IntegerField(min_value=1)
+    applicant_role = serializers.CharField(max_length=80, required=False, allow_blank=True)
     category = serializers.ChoiceField(choices=("CL", "RH", "SCL", "EL", "COL", "VL"))
     start_date = serializers.DateField()
     end_date = serializers.DateField()
