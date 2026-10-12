@@ -18,10 +18,10 @@ from modules.leave.services import lifecycle
 
 
 MODULE = HasModuleGrant("employee_leave_management")
-P_SELF = "leave.application.view_self"
-P_CREATE = "leave.application.create"
-P_REVIEW = "leave.workflow.review"
-P_SANCTION = "leave.workflow.sanction"
+P_SELF = "employee_leave_management.application.view_self"
+P_CREATE = "employee_leave_management.application.create"
+P_REVIEW = "employee_leave_management.workflow.review"
+P_SANCTION = "employee_leave_management.workflow.sanction"
 
 
 def actor(request):
@@ -54,14 +54,14 @@ class ApplyView(APIView):
 
 
 class WithdrawView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.application.withdraw")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.application.withdraw")]
     def post(self, request, pk):
         app = service.withdraw(application_id=pk, actor=actor(request))
         return Response(s.LeaveApplicationSerializer(app).data)
 
 
 class SubstituteResponseView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.substitute.respond")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.substitute.respond")]
     def post(self, request, pk):
         payload = s.SubstituteResponseSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -107,7 +107,7 @@ class InboxView(generics.ListAPIView):
 
 class SubstituteInboxView(generics.ListAPIView):
     serializer_class = s.LeaveApplicationSerializer
-    permission_classes = [MODULE, HasPermission("leave.substitute.respond")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.substitute.respond")]
     def get_queryset(self):
         return LeaveApplication.objects.filter(
             substitute_user_id=actor(self.request).user_id,
@@ -117,7 +117,7 @@ class SubstituteInboxView(generics.ListAPIView):
 
 class LifecycleSubstituteInboxView(generics.ListAPIView):
     serializer_class = s.LifecycleRequestSerializer
-    permission_classes = [MODULE, HasPermission("leave.substitute.respond")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.substitute.respond")]
     def get_queryset(self):
         return LeaveLifecycleRequest.objects.filter(
             substitute_user_id=actor(self.request).user_id,
@@ -126,7 +126,7 @@ class LifecycleSubstituteInboxView(generics.ListAPIView):
 
 
 class CancellationView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.application.cancel")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.application.cancel")]
     def post(self, request, pk):
         payload = s.CancellationSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -136,7 +136,7 @@ class CancellationView(APIView):
 
 
 class ExtensionView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.application.extend")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.application.extend")]
     def post(self, request, pk):
         payload = s.ExtensionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -146,7 +146,7 @@ class ExtensionView(APIView):
 
 
 class LifecycleSubstituteResponseView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.substitute.respond")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.substitute.respond")]
     def post(self, request, pk):
         payload = s.SubstituteResponseSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -166,7 +166,7 @@ class LifecycleReplacementSubstituteView(APIView):
 
 
 class ResumptionView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.application.resume")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.application.resume")]
     def post(self, request, pk):
         payload = s.ResumptionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -197,17 +197,17 @@ class MyLifecycleRequestsView(generics.ListAPIView):
 class PolicyAdminView(generics.ListCreateAPIView):
     queryset = LeavePolicy.objects.all().order_by("category")
     serializer_class = s.PolicySerializer
-    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.policy.manage")]
 
 
 class CalendarAdminView(generics.ListCreateAPIView):
     queryset = LeaveCalendar.objects.all().order_by("-year", "kind")
     serializer_class = s.CalendarSerializer
-    permission_classes = [MODULE, HasPermission("leave.calendar.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.calendar.manage")]
 
 
 class CalendarPublishView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.calendar.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.calendar.manage")]
     def post(self, request, pk):
         calendar = LeaveCalendar.objects.filter(pk=pk).first()
         if calendar is None:
@@ -235,17 +235,17 @@ class CalendarPublishView(APIView):
 class WorkflowAdminView(generics.ListCreateAPIView):
     queryset = LeaveWorkflowStep.objects.all().order_by("category", "sequence")
     serializer_class = s.WorkflowStepSerializer
-    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.policy.manage")]
 
 
 class SLAAdminView(generics.ListCreateAPIView):
     queryset = LeaveSLAConfig.objects.all().order_by("task_type")
     serializer_class = s.SLAConfigSerializer
-    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.policy.manage")]
 
 
 class OfflineSanctionRecordView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.records.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.records.manage")]
     def post(self, request):
         payload = s.OfflineSanctionSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
@@ -257,25 +257,25 @@ class OfflineSanctionRecordView(APIView):
 class PolicyDetailAdminView(generics.RetrieveUpdateAPIView):
     queryset = LeavePolicy.objects.all()
     serializer_class = s.PolicySerializer
-    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.policy.manage")]
 
 
 class CalendarDetailAdminView(generics.RetrieveUpdateAPIView):
     queryset = LeaveCalendar.objects.all()
     serializer_class = s.CalendarSerializer
-    permission_classes = [MODULE, HasPermission("leave.calendar.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.calendar.manage")]
 
 
 class WorkflowDetailAdminView(generics.RetrieveUpdateAPIView):
     queryset = LeaveWorkflowStep.objects.all()
     serializer_class = s.WorkflowStepSerializer
-    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.policy.manage")]
 
 
 class SLADetailAdminView(generics.RetrieveUpdateAPIView):
     queryset = LeaveSLAConfig.objects.all()
     serializer_class = s.SLAConfigSerializer
-    permission_classes = [MODULE, HasPermission("leave.policy.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.policy.manage")]
 
 
 class ApplicationExportView(APIView):
@@ -287,7 +287,7 @@ class ApplicationExportView(APIView):
             raise NotFoundError("No such leave application.")
         principal = actor(request)
         if item.user_id != principal.user_id and item.current_assignee_user_id != principal.user_id:
-            if not principal.has_permission("leave.report.view"):
+            if not principal.has_permission("employee_leave_management.report.view"):
                 from core.api.exceptions import PermissionDeniedError
                 raise PermissionDeniedError("You cannot export this leave application.")
         body = (
@@ -303,7 +303,7 @@ class ApplicationExportView(APIView):
 
 
 class LeaveReportView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.report.view")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.report.view")]
     def get(self, request):
         from django.db.models import Count
         by_status = list(LeaveApplication.objects.values("status").annotate(count=Count("id")).order_by("status"))
@@ -321,7 +321,7 @@ class MyLedgerView(generics.ListAPIView):
 
 
 class LeaveRecordMaintenanceView(APIView):
-    permission_classes = [MODULE, HasPermission("leave.records.manage")]
+    permission_classes = [MODULE, HasPermission("employee_leave_management.records.manage")]
     def patch(self, request, pk):
         payload = s.RecordMaintenanceSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
