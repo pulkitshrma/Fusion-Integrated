@@ -17,17 +17,25 @@ def applicant_context(application):
 def route_steps(application):
     person = applicant_context(application)
     unit = person.department or ""
+    role = application.applicant_role or ""
     rows = LeaveWorkflowStep.objects.filter(
         category=application.category, is_active=True
-    ).filter(organizational_unit__in=[unit, ""]).order_by("sequence")
+    ).filter(organizational_unit__in=[unit, ""]).filter(
+        designation__in=[role, ""]
+    ).order_by("sequence")
     # Prefer unit-specific rows over generic rows at the same sequence.
     steps = list(rows)
     if unit:
-        specific = [s for s in steps if s.organizational_unit == unit]
-        if specific:
-            steps = specific
+        unit_specific = [s for s in steps if s.organizational_unit == unit]
+        if unit_specific:
+            steps = unit_specific
         else:
             steps = [s for s in steps if not s.organizational_unit]
+    role_specific = [s for s in steps if s.designation == role]
+    if role and role_specific:
+        steps = role_specific
+    else:
+        steps = [s for s in steps if not s.designation]
     if not steps:
         raise WorkflowConfigurationError(
             f"No approval route is configured for {application.category} in {unit or 'the applicant unit'}."
@@ -40,6 +48,9 @@ def route_steps(application):
         raise WorkflowConfigurationError("The configured route must begin with a Unit Head.")
     if any(s.assignee_user_id is None for s in steps):
         raise WorkflowConfigurationError("Every active workflow step must have an explicit assignee user.")
+    for step in steps:
+        if step.assignee_user_id == application.user_id and step.assignee_role.lower() != "director":
+            raise WorkflowConfigurationError("An employee cannot approve their own leave request.")
     return steps
 
 
