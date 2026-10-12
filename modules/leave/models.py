@@ -238,3 +238,16 @@ class LeaveLifecycleEvent(models.Model):
     class Meta:
         db_table = "leave_lifecycle_event"
         ordering = ["created_at", "id"]
+
+
+class LeaveYearEndRun(models.Model):
+    year = models.PositiveSmallIntegerField(unique=True)
+    started_at = models.DateTimeField(auto_now_add=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(max_length=12, choices=[("running","Running"),("completed","Completed"),("failed","Failed")], default="running")
+    processed_accounts = models.PositiveIntegerField(default=0)
+    exception_count = models.PositiveIntegerField(default=0)
+    exceptions = models.JSONField(default=list, blank=True)
+
+    class Meta:
+        db_table = "leave_year_end_run"
