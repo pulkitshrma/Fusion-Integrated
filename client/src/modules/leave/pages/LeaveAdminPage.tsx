@@ -69,7 +69,7 @@ export default function LeaveAdminPage() {
           <Title order={4} mb="sm">Leave policies</Title>
           <Table.ScrollContainer minWidth={620}>
             <Table striped>
-              <Table.Thead><Table.Tr><Table.Th>Category</Table.Th><Table.Th>Annual entitlement</Table.Th><Table.Th>Carry forward</Table.Th><Table.Th>Applicability</Table.Th><Table.Th>Action</Table.Th></Table.Tr></Table.Thead>
+              <Table.Thead><Table.Tr><Table.Th>Category</Table.Th><Table.Th>Annual entitlement</Table.Th><Table.Th>Carry forward</Table.Th><Table.Th>Applicability</Table.Th><Table.Th>Medical evidence</Table.Th><Table.Th>Action</Table.Th></Table.Tr></Table.Thead>
               <Table.Tbody>
                 {(policies.data?.results ?? []).map((p: Record<string, unknown>) => (
                   <Table.Tr key={String(p.id)}>
@@ -77,7 +77,9 @@ export default function LeaveAdminPage() {
                     <Table.Td>{String(p.annual_entitlement)}</Table.Td>
                     <Table.Td>{p.carry_forward ? "Yes" : "No"}</Table.Td>
                     <Table.Td>{p.faculty_only ? "Faculty only" : p.non_faculty_only ? "Non-faculty only" : "All eligible employees"}</Table.Td>
+                    <Table.Td>{p.medical_evidence_required ? "Required" : "Not required"}</Table.Td>
                     <Table.Td>
+                      <Group gap="xs">
                       <Button size="xs" variant="light" onClick={() => {
                         const value = window.prompt("New annual entitlement", String(p.annual_entitlement));
                         if (value !== null && Number.isFinite(Number(value))) {
@@ -85,6 +87,10 @@ export default function LeaveAdminPage() {
                             { onSuccess: () => success("Policy updated"), onError: fail });
                         }
                       }}>Edit entitlement</Button>
+                      <Button size="xs" variant="subtle" onClick={() => updatePolicy.mutate({
+                        id: Number(p.id), body: { medical_evidence_required: !Boolean(p.medical_evidence_required) },
+                      }, { onSuccess: () => success("Evidence policy updated"), onError: fail })}>Toggle evidence</Button>
+                      </Group>
                     </Table.Td>
                   </Table.Tr>
                 ))}
