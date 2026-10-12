@@ -184,7 +184,7 @@ class LeaveLifecycleRequest(TimeStampedModel):
     application = models.ForeignKey(LeaveApplication, on_delete=models.PROTECT,
                                     related_name="lifecycle_requests")
     kind = models.CharField(max_length=16, choices=KINDS)
-    status = models.CharField(max_length=12, choices=STATUSES, default="pending")
+    status = models.CharField(max_length=32, choices=STATUSES, default="pending")
     requested_start_date = models.DateField(null=True, blank=True)
     requested_end_date = models.DateField(null=True, blank=True)
     actual_resumption_date = models.DateField(null=True, blank=True)
@@ -234,7 +234,7 @@ class LeaveSLAEvent(models.Model):
 class LeaveLifecycleEvent(models.Model):
     request = models.ForeignKey(LeaveLifecycleRequest, on_delete=models.CASCADE,
                                 related_name="events")
-    from_status = models.CharField(max_length=12, blank=True)
+    from_status = models.CharField(max_length=32, blank=True)
     to_status = models.CharField(max_length=12)
     action = models.CharField(max_length=32)
     actor_user_id = models.BigIntegerField(null=True, blank=True)
