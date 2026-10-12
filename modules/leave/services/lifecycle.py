@@ -55,7 +55,7 @@ def request_cancellation(*, application_id, actor, details=""):
 
 
 @transaction.atomic
-def request_extension(*, application_id, actor, new_end_date, details="", substitute_user_id=None):
+def request_extension(*, application_id, actor, new_end_date, details="", substitute_user_id=None, supporting_evidence_reference=""):
     app = LeaveApplication.objects.select_for_update().filter(
         pk=application_id, user_id=actor.user_id, status="approved"
     ).first()
@@ -63,6 +63,7 @@ def request_extension(*, application_id, actor, new_end_date, details="", substi
         raise NotFoundError("No ongoing approved leave was found.")
     if app.category not in {"EL", "COL", "VL"}:
         raise ConflictError("Extension is supported only for EL, COL and VL.", code="extension_not_supported")
+    applications._validate_evidence(app.category, supporting_evidence_reference)
     today = timezone.localdate()
     if not (app.start_date <= today <= app.end_date):
         raise ConflictError("Extension is available only while the approved leave is ongoing.", code="extension_not_ongoing")
@@ -95,6 +96,7 @@ def request_extension(*, application_id, actor, new_end_date, details="", substi
         step_type = step.step_type
     request = LeaveLifecycleRequest.objects.create(
         application=app, kind="extension", status=request_status, details=details,
+        supporting_evidence_reference=supporting_evidence_reference,
         requested_start_date=increment_start, requested_end_date=new_end_date,
         substitute_user_id=substitute_user_id,
         current_assignee_user_id=assignee, current_step_type=step_type,
