@@ -61,6 +61,7 @@ class LeaveApplication(TimeStampedModel):
     category = models.CharField(max_length=3, choices=CATEGORIES)
     start_date = models.DateField()
     end_date = models.DateField()
+    actual_end_date = models.DateField(null=True, blank=True)
     half_day = models.CharField(max_length=12, blank=True,
         choices=[("first_half","First half"),("second_half","Second half")])
     purpose = models.TextField(max_length=2000)
@@ -253,3 +254,23 @@ class LeaveYearEndRun(models.Model):
 
     class Meta:
         db_table = "leave_year_end_run"
+
+
+class LeaveAttendanceSyncOutbox(models.Model):
+    """Durable hand-off to the separately owned attendance service."""
+    STATUSES = [("pending", "Pending"), ("processed", "Processed"), ("failed", "Failed")]
+    request = models.OneToOneField(LeaveLifecycleRequest, on_delete=models.PROTECT,
+                                   related_name="attendance_sync")
+    application = models.ForeignKey(LeaveApplication, on_delete=models.PROTECT,
+                                    related_name="attendance_sync_events")
+    user_id = models.BigIntegerField(db_index=True)
+    payload = models.JSONField(default=dict)
+    status = models.CharField(max_length=12, choices=STATUSES, default="pending", db_index=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    last_error = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "leave_attendance_sync_outbox"
+        ordering = ["created_at", "id"]
