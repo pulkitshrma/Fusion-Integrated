@@ -358,7 +358,7 @@ def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
         rules.validate_vacation(start_date, end_date, periods)
     _validate_overlap(user_id, start_date, end_date, category, "")
     days = _requested_days(category, start_date, end_date, "")
-    balance = _balance_for_update(user_id, category, start_date.year)
+    balance = _balance_for_update(user_id, category, start_date.year, employee_kind)
     if balance.available < days:
         raise rules.PolicyViolation("insufficient_balance", "The offline-sanctioned entry exceeds the available leave balance.")
     app = LeaveApplication.objects.create(
