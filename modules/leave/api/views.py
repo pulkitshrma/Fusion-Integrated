@@ -318,3 +318,13 @@ class MyLedgerView(generics.ListAPIView):
         return LeaveLedgerEntry.objects.filter(
             user_id=actor(self.request).user_id
         ).order_by("-created_at")
+
+
+class LeaveRecordMaintenanceView(APIView):
+    permission_classes = [MODULE, HasPermission("leave.records.manage")]
+    def patch(self, request, pk):
+        payload = s.RecordMaintenanceSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        app = _run(service.maintain_leave_record, application_id=pk,
+                   actor=actor(request), **payload.validated_data)
+        return Response(s.LeaveApplicationSerializer(app).data)
