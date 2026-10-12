@@ -40,7 +40,15 @@ def route_steps(application):
         raise WorkflowConfigurationError(
             f"No approval route is configured for {application.category} in {unit or 'the applicant unit'}."
         )
-    if application.category in {"CL", "RH"}:
+    director_self = [
+        s for s in steps
+        if role.lower() == "director" and s.step_type == "sanction"
+        and s.assignee_role.lower() == "director"
+        and s.assignee_user_id == application.user_id
+    ]
+    if director_self:
+        steps = director_self
+    elif application.category in {"CL", "RH"}:
         steps = [s for s in steps if s.step_type == "unit_head"]
     else:
         steps = [s for s in steps if s.step_type in {"unit_head", "establishment", "sanction"}]
