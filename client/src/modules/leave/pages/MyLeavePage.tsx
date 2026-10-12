@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import {
   Alert, Badge, Button, Card, Checkbox, Container, Group, Select, Stack,
   Table, Text, TextInput, Textarea, Title,
@@ -57,7 +57,7 @@ export default function MyLeavePage() {
     notifications.show({ color: "red", title: "Request failed", message: errorMessage(e) });
   }
 
-  function submit(event: React.FormEvent) {
+  function submit(event: FormEvent) {
     event.preventDefault();
     if (!category || !start || !end || !purpose.trim()) return;
     apply.mutate({
