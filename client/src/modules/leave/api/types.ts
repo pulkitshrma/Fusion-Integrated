@@ -11,6 +11,7 @@ export interface LeaveEvent {
 
 export interface LeaveApplication {
   id: number;
+  user_id: number;
   category: LeaveCategory;
   start_date: string;
   end_date: string;
