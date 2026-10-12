@@ -184,6 +184,8 @@ class LeaveLifecycleRequest(TimeStampedModel):
     requested_end_date = models.DateField(null=True, blank=True)
     actual_resumption_date = models.DateField(null=True, blank=True)
     details = models.TextField(blank=True)
+    substitute_user_id = models.BigIntegerField(null=True, blank=True)
+    substitute_response = models.CharField(max_length=10, blank=True)
     current_assignee_user_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     final_decision_by_user_id = models.BigIntegerField(null=True, blank=True)
     final_decision_at = models.DateTimeField(null=True, blank=True)
