@@ -32,6 +32,8 @@ export default function MyLeavePage() {
   const extend = useLeaveMutation("/leave/applications/:id/extend");
   const resume = useLeaveMutation("/leave/applications/:id/resumption");
   const withdrawLifecycle = useLeaveMutation("/leave/lifecycle/:id/withdraw");
+  const replaceSubstitute = useLeaveMutation("/leave/applications/:id/substitute-replacement");
+  const replaceLifecycleSubstitute = useLeaveMutation("/leave/lifecycle/:id/substitute-replacement");
 
   const [category, setCategory] = useState<string | null>("CL");
   const [start, setStart] = useState("");
@@ -45,6 +47,7 @@ export default function MyLeavePage() {
   const [extensionSubstitutes, setExtensionSubstitutes] = useState<Record<number, string>>({});
   const [extensionEvidence, setExtensionEvidence] = useState<Record<number, string>>({});
   const [resumptionDetails, setResumptionDetails] = useState<Record<number, string>>({});
+  const [replacementIds, setReplacementIds] = useState<Record<number, string>>({});
   const [extensionDates, setExtensionDates] = useState<Record<number, string>>({});
   const [resumptionDates, setResumptionDates] = useState<Record<number, string>>({});
 
@@ -153,6 +156,13 @@ export default function MyLeavePage() {
                       <Group gap={4} wrap="nowrap">
                         {["awaiting_substitute","applicant_action_required","awaiting_unit_head","awaiting_establishment","awaiting_sanction"].includes(app.status)
                           && <Button size="xs" color="gray" variant="light" onClick={() => action(withdraw, app.id, {}, "Application withdrawn")}>Withdraw</Button>}
+                        {app.status === "applicant_action_required" && app.substitute_response === "declined" && <>
+                          <TextInput size="xs" aria-label="Replacement substitute user ID" placeholder="New substitute ID"
+                            value={replacementIds[app.id] ?? ""}
+                            onChange={(e) => setReplacementIds((v) => ({ ...v, [app.id]: e.currentTarget.value }))} />
+                          <Button size="xs" variant="light" disabled={!replacementIds[app.id]}
+                            onClick={() => action(replaceSubstitute, app.id, { substitute_user_id: Number(replacementIds[app.id]) }, "Replacement nominated")}>Replace</Button>
+                        </>}
                         {app.status === "approved" && <>
                           {app.start_date > new Date().toISOString().slice(0, 10) &&
                             <Button size="xs" color="gray" variant="light" onClick={() => action(cancel, app.id, { details: "Employee requested cancellation" }, "Cancellation requested")}>Cancel</Button>}
@@ -199,6 +209,13 @@ export default function MyLeavePage() {
             <Text size="sm">#{r.id} · {r.kind} · application #{r.application_id}</Text>
             <Group gap="xs">
               <Badge variant="light">{r.status.replaceAll("_", " ")}</Badge>
+              {r.status === "applicant_action_required" && r.kind === "extension" && <>
+                <TextInput size="xs" aria-label="Replacement extension substitute user ID" placeholder="New substitute ID"
+                  value={replacementIds[r.id] ?? ""}
+                  onChange={(e) => setReplacementIds((v) => ({ ...v, [r.id]: e.currentTarget.value }))} />
+                <Button size="xs" variant="light" disabled={!replacementIds[r.id]}
+                  onClick={() => action(replaceLifecycleSubstitute, r.id, { substitute_user_id: Number(replacementIds[r.id]) }, "Extension substitute replaced")}>Replace</Button>
+              </>}
               {["pending", "awaiting_substitute", "applicant_action_required"].includes(r.status) &&
                 <Button size="xs" color="gray" variant="light"
                   onClick={() => action(withdrawLifecycle, r.id, { note: "Employee withdrew pending lifecycle request" }, "Lifecycle request withdrawn")}>Withdraw</Button>}
