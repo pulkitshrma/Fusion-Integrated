@@ -71,7 +71,7 @@ def request_extension(*, application_id, actor, new_end_date, details="", substi
     increment_start = app.end_date + timedelta(days=1)
     incremental = applications._requested_days(app.category, increment_start, new_end_date, "")
     applications._validate_overlap(app.user_id, increment_start, new_end_date, app.category, "")
-    balance = applications._balance_for_update(app.user_id, app.category, app.start_date.year)
+    balance = applications._balance_for_update(app.user_id, app.category, app.start_date.year, app.employee_kind)
     if balance.available < incremental:
         raise rules.PolicyViolation("insufficient_balance", "Available balance is insufficient for the extension.")
     if app.category == "VL":
