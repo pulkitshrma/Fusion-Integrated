@@ -295,7 +295,7 @@ class SLADetailAdminView(generics.RetrieveUpdateAPIView):
 
 
 class ApplicationExportView(APIView):
-    permission_classes = [MODULE, HasPermission(P_SELF, P_REVIEW, P_SANCTION)]
+    permission_classes = [MODULE, HasPermission(P_SELF, P_REVIEW, P_SANCTION, "employee_leave_management.report.view")]
     @extend_schema(request=None, responses={200: OpenApiTypes.STR})
     def get(self, request, pk):
         item = LeaveApplication.objects.filter(pk=pk).first()
