@@ -67,6 +67,7 @@ class CancellationSerializer(serializers.Serializer):
 class ExtensionSerializer(serializers.Serializer):
     new_end_date = serializers.DateField()
     details = serializers.CharField(max_length=2000, required=False, allow_blank=True)
+    substitute_user_id = serializers.IntegerField(required=False, allow_null=True, min_value=1)
 
 
 class ResumptionSerializer(serializers.Serializer):
