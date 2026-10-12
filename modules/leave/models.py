@@ -180,8 +180,14 @@ class LeaveLifecycleRequest(TimeStampedModel):
     """
     KINDS = [("cancellation", "Cancellation"), ("extension", "Extension"),
              ("resumption", "Resumption")]
-    STATUSES = [("pending", "Pending"), ("approved", "Approved"),
-                ("rejected", "Rejected")]
+    STATUSES = [
+        ("pending", "Pending"),
+        ("awaiting_substitute", "Awaiting Substitute"),
+        ("applicant_action_required", "Applicant Action Required"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+        ("withdrawn", "Withdrawn"),
+    ]
     application = models.ForeignKey(LeaveApplication, on_delete=models.PROTECT,
                                     related_name="lifecycle_requests")
     kind = models.CharField(max_length=16, choices=KINDS)
@@ -236,7 +242,7 @@ class LeaveLifecycleEvent(models.Model):
     request = models.ForeignKey(LeaveLifecycleRequest, on_delete=models.CASCADE,
                                 related_name="events")
     from_status = models.CharField(max_length=32, blank=True)
-    to_status = models.CharField(max_length=12)
+    to_status = models.CharField(max_length=32)
     action = models.CharField(max_length=32)
     actor_user_id = models.BigIntegerField(null=True, blank=True)
     note = models.TextField(blank=True)
