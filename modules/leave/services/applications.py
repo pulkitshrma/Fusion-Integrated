@@ -375,3 +375,38 @@ def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
         note=f"{sanction_reference} ({sanction_date.isoformat()})",
     )
     return app
+
+
+@transaction.atomic
+def maintain_leave_record(*, application_id, actor, purpose=None,
+                          station_leave_details=None, correction_note=""):
+    """Correct descriptive record fields without creating a sanction decision.
+
+    Dates, category, status, approval metadata and balances are deliberately
+    excluded; those require their own governed workflow/ledger operation.
+    """
+    if not correction_note.strip():
+        raise rules.PolicyViolation("correction_reason_required", "A correction reason is required.")
+    app = LeaveApplication.objects.select_for_update().filter(pk=application_id).first()
+    if app is None:
+        from core.api.exceptions import NotFoundError
+        raise NotFoundError("No such leave application.")
+    old = app.status
+    fields = []
+    if purpose is not None:
+        app.purpose = purpose
+        fields.append("purpose")
+    if station_leave_details is not None:
+        if not app.station_leave_required:
+            raise rules.PolicyViolation("station_leave_not_requested", "This application does not include Station Leave.")
+        app.station_leave_details = station_leave_details
+        fields.append("station_leave_details")
+    if not fields:
+        raise rules.PolicyViolation("no_record_changes", "No permitted record fields were supplied.")
+    app.save(update_fields=fields + ["updated_at"])
+    LeaveApplicationEvent.objects.create(
+        application=app, from_status=old, to_status=old,
+        action="admin_record_maintenance", actor_user_id=actor.user_id,
+        note=correction_note,
+    )
+    return app
