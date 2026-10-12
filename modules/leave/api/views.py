@@ -10,7 +10,7 @@ from modules.leave.api import serializers as s
 from modules.leave.domain.rules import PolicyViolation
 from modules.leave.models import (
     LeaveApplication, LeaveBalance, LeaveCalendar, LeaveLifecycleRequest,
-    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep, LeaveSLAEvent,
+    LeavePolicy, LeaveSLAConfig, LeaveWorkflowStep, LeaveSLAEvent, LeaveLedgerEntry,
 )
 from modules.leave.selectors import applications as selectors
 from modules.leave.services import applications as service
@@ -309,3 +309,12 @@ class LeaveReportView(APIView):
         by_status = list(LeaveApplication.objects.values("status").annotate(count=Count("id")).order_by("status"))
         by_category = list(LeaveApplication.objects.values("category").annotate(count=Count("id")).order_by("category"))
         return Response({"applications_by_status": by_status, "applications_by_category": by_category})
+
+
+class MyLedgerView(generics.ListAPIView):
+    serializer_class = s.LeaveLedgerEntrySerializer
+    permission_classes = [MODULE, HasPermission(P_SELF)]
+    def get_queryset(self):
+        return LeaveLedgerEntry.objects.filter(
+            user_id=actor(self.request).user_id
+        ).order_by("-created_at")
