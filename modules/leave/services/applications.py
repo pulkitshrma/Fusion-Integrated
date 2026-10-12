@@ -328,6 +328,14 @@ def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
         raise rules.PolicyViolation("sanction_evidence_required", "A sanction/reference number is required.")
     employee_kind = _employee_kind(user_id)
     rules.validate_category(category, employee_kind)
+    if not sanction_reference.strip():
+        raise rules.PolicyViolation("sanction_evidence_required", "A sanction/reference number is required.")
+    if LeaveLedgerEntry.objects.filter(user_id=user_id, reference=f"offline-sanction:{sanction_reference}").exists():
+        raise rules.PolicyViolation("duplicate_offline_sanction", "This offline sanction reference has already been recorded.")
+    if station_leave_required and not station_leave_details:
+        raise rules.PolicyViolation("station_leave_details_required", "Station Leave details are required when Station Leave is requested.")
+    if not station_leave_required and station_leave_details:
+        raise rules.PolicyViolation("station_leave_not_requested", "Station Leave details require Station Leave to be selected.")
     if end_date < start_date:
         raise rules.PolicyViolation("invalid_period", "End date must not precede start date.")
     if category == "RH":
