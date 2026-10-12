@@ -107,6 +107,8 @@ def apply(*, actor, category, start_date, end_date, purpose,
     rules.validate_category(category, employee_kind)
     if end_date < start_date:
         raise rules.PolicyViolation("invalid_period", "End date must not precede start date.")
+    if half_day and category != "CL":
+        raise rules.PolicyViolation("half_day_not_supported", "Half-day leave is supported only for CL.")
     if category == "RH":
         rules.validate_rh(start_date, end_date, _calendar_dates(start_date, end_date, "rh"))
     if category == "VL":
@@ -208,6 +210,9 @@ def decide(*, application_id, actor, outcome, note=""):
     if current is None:
         raise PermissionDeniedError("You are not part of this application's configured approval route.")
     old = app.status
+    required_permission = "leave.workflow.review" if current.step_type == "unit_head" else "leave.workflow.sanction"
+    if not actor.has_permission(required_permission):
+        raise PermissionDeniedError(f"This action requires {required_permission}.")
     final = False
     if current.step_type == "unit_head":
         if app.category in {"CL", "RH"}:
