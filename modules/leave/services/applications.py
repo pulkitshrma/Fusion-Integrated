@@ -171,10 +171,16 @@ def apply(*, actor, category, start_date, end_date, purpose,
         station_leave_details=station_leave_details or {},
         substitute_user_id=substitute_user_id,
     )
+    steps = workflow.route_steps(app)
+    app.workflow_snapshot = [
+        {"sequence": step.sequence, "step_type": step.step_type,
+         "assignee_user_id": step.assignee_user_id, "assignee_role": step.assignee_role}
+        for step in steps
+    ]
     app.current_assignee_user_id = (
-        substitute_user_id if substitute_user_id else workflow.initial_assignee(app)
+        substitute_user_id if substitute_user_id else steps[0].assignee_user_id
     )
-    app.save(update_fields=["current_assignee_user_id", "updated_at"])
+    app.save(update_fields=["workflow_snapshot", "current_assignee_user_id", "updated_at"])
     LeaveApplicationEvent.objects.create(
         application=app, from_status="", to_status=status, action="submit",
         actor_user_id=user_id,
