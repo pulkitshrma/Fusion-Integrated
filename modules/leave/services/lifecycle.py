@@ -3,6 +3,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from core.api.exceptions import ConflictError, NotFoundError, PermissionDeniedError
@@ -38,7 +39,7 @@ def request_cancellation(*, application_id, actor, details=""):
         raise NotFoundError("No approved leave application was found.")
     if app.start_date <= timezone.localdate():
         raise ConflictError("Pre-start cancellation is unavailable after leave has begun.", code="cancellation_window_closed")
-    if app.lifecycle_requests.filter(kind="cancellation", status__in=["pending", "awaiting_substitute"]).exists():
+    if app.lifecycle_requests.filter(kind="cancellation", status__in=["pending", "awaiting_substitute", "applicant_action_required"]).exists():
         raise ConflictError("A cancellation request is already pending.", code="cancellation_pending")
     step = _first_route_step(app)
     request = LeaveLifecycleRequest.objects.create(
@@ -70,6 +71,10 @@ def request_extension(*, application_id, actor, new_end_date, details="", substi
         raise NotFoundError("No ongoing approved leave was found.")
     if app.category not in {"EL", "COL", "VL"}:
         raise ConflictError("Extension is supported only for EL, COL and VL.", code="extension_not_supported")
+    if app.actual_end_date or app.lifecycle_requests.filter(kind="resumption", status="approved").exists():
+        raise ConflictError("An extension cannot be requested after resumption has been approved.", code="resumption_already_approved")
+    if app.lifecycle_requests.filter(kind="resumption", status="pending").exists():
+        raise ConflictError("A resumption review is already pending.", code="resumption_pending")
     applications._validate_evidence(app.category, supporting_evidence_reference)
     today = timezone.localdate()
     effective_end = _effective_approved_end(app)
@@ -127,6 +132,10 @@ def respond_extension_substitute(*, request_id, actor, accept, note=""):
         raise NotFoundError("No extension substitute request is assigned to you.")
     old = req.status
     if accept:
+        applications._validate_substitute(
+            applicant_id=req.application.user_id, substitute_id=actor.user_id,
+            start=req.requested_start_date, end=req.requested_end_date,
+        )
         step = _first_route_step(req.application)
         req.status = "pending"
         req.current_assignee_user_id = step.assignee_user_id
@@ -185,7 +194,11 @@ def submit_resumption(*, application_id, actor, actual_resumption_date, details=
         raise ConflictError("Resumption review is supported only for EL, COL and VL.", code="resumption_not_supported")
     if actual_resumption_date < app.start_date:
         raise ConflictError("Actual resumption date cannot precede the leave start date.", code="invalid_resumption_date")
-    if app.lifecycle_requests.filter(kind="resumption", status="pending").exists():
+    if actual_resumption_date > timezone.localdate():
+        raise ConflictError("Resumption can be submitted only after the employee has returned to duty.", code="future_resumption_date")
+    if app.lifecycle_requests.filter(kind="extension", status__in=["pending", "awaiting_substitute", "applicant_action_required"]).exists():
+        raise ConflictError("Resolve the pending extension request before submitting resumption.", code="extension_pending")
+    if app.lifecycle_requests.filter(kind="resumption", status__in=["pending", "approved"]).exists():
         raise ConflictError("A resumption review is already pending.", code="resumption_pending")
     step = _last_route_step(app)
     req = LeaveLifecycleRequest.objects.create(
@@ -224,6 +237,8 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
         req.current_step_type == "unit_head" and app.category in {"CL", "RH"}
     )
     if not final:
+        if req.current_step_type == "establishment" and not approve:
+            raise ConflictError("Establishment processing must route the request onward.", code="invalid_establishment_action")
         steps = workflow.route_steps(app)
         current_index = next((i for i, s in enumerate(steps)
                               if s.assignee_user_id == actor.user_id
@@ -237,7 +252,8 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
         req.save(update_fields=["current_assignee_user_id", "current_step_type", "decision_note", "updated_at"])
         LeaveLifecycleEvent.objects.create(
             request=req, from_status=old, to_status="pending",
-            action="recommended" if approve else "not_recommended",
+            action=("route" if req.current_step_type == "establishment" else
+                    "recommended" if approve else "not_recommended"),
             actor_user_id=actor.user_id, note=note,
         )
         notifications.notify_lifecycle_assignee(req)
@@ -287,7 +303,10 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
                 user_id=app.user_id, category=app.category, year=app.start_date.year)
             amount = Decimal(abs(delta))
             if delta < 0:
-                amount = min(balance.consumed, app.requested_days, amount)
+                extension_days = LeaveLedgerEntry.objects.filter(
+                    application=app, reference__startswith="extension:"
+                ).aggregate(total=Sum("amount"))["total"] or Decimal("0")
+                amount = min(balance.consumed, app.requested_days + extension_days, amount)
                 balance.consumed -= amount
                 entry_type = "restore"
             else:
