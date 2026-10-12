@@ -148,9 +148,35 @@ def respond_extension_substitute(*, request_id, actor, accept, note=""):
                                       f"Extension request {req.pk} needs a replacement substitute.")
         except Exception:
             pass
+    return req
+
+
+@transaction.atomic
+def nominate_extension_replacement(*, request_id, actor, substitute_user_id):
+    req = LeaveLifecycleRequest.objects.select_for_update().select_related("application").filter(
+        pk=request_id, kind="extension", status="applicant_action_required",
+        application__user_id=actor.user_id,
+    ).first()
+    if req is None:
+        raise NotFoundError("No extension request requires a replacement substitute.")
+    applications._validate_substitute(
+        applicant_id=req.application.user_id, substitute_id=substitute_user_id,
+        start=req.requested_start_date, end=req.requested_end_date,
+    )
+    old = req.status
+    req.substitute_user_id = substitute_user_id
+    req.substitute_response = ""
+    req.status = "awaiting_substitute"
+    req.current_assignee_user_id = substitute_user_id
+    req.current_step_type = "substitute"
+    req.save()
+    LeaveLifecycleEvent.objects.create(
+        request=req, from_status=old, to_status=req.status,
+        action="nominate_replacement", actor_user_id=actor.user_id,
+    )
     try:
-        notifications.notify_user(app.user_id, f"Leave {req.kind} decision recorded",
-                                  f"Your {req.kind} request {req.pk} was {req.status}. {note}")
+        notifications.notify_user(substitute_user_id, "Extension substitute consent requested",
+                                  f"You have been nominated for extension request {req.pk}.")
     except Exception:
         pass
     return req
@@ -279,4 +305,9 @@ def decide_lifecycle(*, request_id, actor, approve, note=""):
                 user_id=app.user_id, application=app, category=app.category,
                 amount=amount, entry_type=entry_type, reference=f"resumption:{req.pk}",
             )
+    try:
+        notifications.notify_user(app.user_id, f"Leave {req.kind} decision recorded",
+                                  f"Your {req.kind} request {req.pk} was {req.status}. {note}")
+    except Exception:
+        pass
     return req
