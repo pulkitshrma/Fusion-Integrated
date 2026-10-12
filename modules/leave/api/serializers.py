@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from modules.leave.models import (
     LeaveApplication, LeaveApplicationEvent, LeaveBalance, LeaveCalendar,
-    LeaveLifecycleEvent, LeaveLifecycleRequest, LeavePolicy, LeaveSLAConfig,
+    LeaveLedgerEntry, LeaveLifecycleEvent, LeaveLifecycleRequest, LeavePolicy, LeaveSLAConfig,
     LeaveWorkflowStep,
 )
 
@@ -148,3 +148,11 @@ class OfflineSanctionSerializer(serializers.Serializer):
     sanction_date = serializers.DateField()
     station_leave_required = serializers.BooleanField(required=False, default=False)
     station_leave_details = serializers.DictField(required=False, default=dict)
+
+
+class LeaveLedgerEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveLedgerEntry
+        fields = ("id", "application_id", "category", "amount", "entry_type",
+                  "reference", "created_at")
+        read_only_fields = fields
