@@ -119,3 +119,104 @@ class LeaveSubstituteResponse(TimeStampedModel):
 
     class Meta:
         db_table = "leave_substitute_response"
+
+
+class LeaveWorkflowStep(TimeStampedModel):
+    """Explicit, administrator-configured approval route.
+
+    A route is selected by category and (optionally) employee unit/designation.
+    A missing next step is a configuration error: requests are never silently
+    assigned to nobody or approved by a generic permission holder.
+    """
+    STEP_TYPES = [("unit_head", "Unit Head"), ("establishment", "Establishment"),
+                  ("sanction", "Sanctioning Authority")]
+    category = models.CharField(max_length=3, choices=LeaveApplication.CATEGORIES)
+    organizational_unit = models.CharField(max_length=120, blank=True)
+    designation = models.CharField(max_length=120, blank=True)
+    sequence = models.PositiveSmallIntegerField()
+    step_type = models.CharField(max_length=20, choices=STEP_TYPES)
+    assignee_user_id = models.BigIntegerField(null=True, blank=True)
+    assignee_role = models.CharField(max_length=80, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "leave_workflow_step"
+        ordering = ["category", "organizational_unit", "designation", "sequence"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["category", "organizational_unit", "designation", "sequence"],
+                name="leave_workflow_step_unique"),
+        ]
+
+
+class LeaveVacationPeriod(TimeStampedModel):
+    """Locally cached vacation windows imported from the external Academic Calendar."""
+    external_id = models.CharField(max_length=120, unique=True)
+    name = models.CharField(max_length=160)
+    start_date = models.DateField()
+    end_date = models.DateField()
+    academic_year = models.CharField(max_length=20, db_index=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "leave_vacation_period"
+        constraints = [
+            models.CheckConstraint(condition=Q(end_date__gte=models.F("start_date")),
+                                   name="leave_vacation_period_valid"),
+        ]
+
+
+class LeaveLifecycleRequest(TimeStampedModel):
+    """Cancellation, extension and resumption are separate audited requests.
+
+    The approved base application is not mutated while a cancellation or
+    extension is awaiting a decision.
+    """
+    KINDS = [("cancellation", "Cancellation"), ("extension", "Extension"),
+             ("resumption", "Resumption")]
+    STATUSES = [("pending", "Pending"), ("approved", "Approved"),
+                ("rejected", "Rejected")]
+    application = models.ForeignKey(LeaveApplication, on_delete=models.PROTECT,
+                                    related_name="lifecycle_requests")
+    kind = models.CharField(max_length=16, choices=KINDS)
+    status = models.CharField(max_length=12, choices=STATUSES, default="pending")
+    requested_start_date = models.DateField(null=True, blank=True)
+    requested_end_date = models.DateField(null=True, blank=True)
+    actual_resumption_date = models.DateField(null=True, blank=True)
+    details = models.TextField(blank=True)
+    current_assignee_user_id = models.BigIntegerField(null=True, blank=True, db_index=True)
+    final_decision_by_user_id = models.BigIntegerField(null=True, blank=True)
+    final_decision_at = models.DateTimeField(null=True, blank=True)
+    decision_note = models.TextField(blank=True)
+
+    class Meta:
+        db_table = "leave_lifecycle_request"
+        indexes = [models.Index(fields=["current_assignee_user_id", "status"],
+                                name="leave_lifecycle_assignee_idx")]
+
+
+class LeaveSLAConfig(TimeStampedModel):
+    """Thresholds are configured in hours for each actionable task class."""
+    task_type = models.CharField(max_length=32, unique=True)
+    reminder_after_hours = models.PositiveIntegerField()
+    escalate_after_hours = models.PositiveIntegerField()
+    escalation_assignee_user_id = models.BigIntegerField(null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = "leave_sla_config"
+
+
+class LeaveSLAEvent(models.Model):
+    lifecycle_request = models.ForeignKey(LeaveLifecycleRequest, null=True, blank=True,
+        on_delete=models.CASCADE, related_name="sla_events")
+    application = models.ForeignKey(LeaveApplication, null=True, blank=True,
+        on_delete=models.CASCADE, related_name="sla_events")
+    event_type = models.CharField(max_length=16, choices=[("assigned","Assigned"),
+        ("reminder","Reminder"),("escalation","Escalation")])
+    recipient_user_id = models.BigIntegerField()
+    details = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "leave_sla_event"
