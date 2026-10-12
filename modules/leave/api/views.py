@@ -125,6 +125,16 @@ class ExtensionView(APIView):
         return Response(s.LifecycleRequestSerializer(item).data, status=201)
 
 
+class LifecycleSubstituteResponseView(APIView):
+    permission_classes = [MODULE, HasPermission("leave.substitute.respond")]
+    def post(self, request, pk):
+        payload = s.SubstituteResponseSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        item = _run(lifecycle.respond_extension_substitute, request_id=pk,
+                    actor=actor(request), **payload.validated_data)
+        return Response(s.LifecycleRequestSerializer(item).data)
+
+
 class ResumptionView(APIView):
     permission_classes = [MODULE, HasPermission("leave.application.resume")]
     def post(self, request, pk):
