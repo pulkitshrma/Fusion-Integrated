@@ -359,15 +359,15 @@ def record_offline_sanctioned(*, actor, user_id, category, start_date, end_date,
     _validate_overlap(user_id, start_date, end_date, category, "")
     days = _requested_days(category, start_date, end_date, "")
     balance = _balance_for_update(user_id, category, start_date.year, employee_kind)
-    if balance.available < days:
-        raise rules.PolicyViolation("insufficient_balance", "The offline-sanctioned entry exceeds the available leave balance.")
+    # This is synchronization of an already authorized sanction, not a new
+    # request. Preserve the sanctioned record even if the reconstructed
+    # historical account becomes negative; the debit remains auditable.
     app = LeaveApplication.objects.create(
         user_id=user_id, category=category, start_date=start_date, end_date=end_date,
+        actual_end_date=end_date,
         purpose=purpose, employee_kind=employee_kind, applicant_role=(actor.active_role or ""), requested_days=days,
         status=sm.APPROVED, station_leave_required=station_leave_required,
         station_leave_details=station_leave_details or {},
-        final_decision_by_user_id=actor.user_id,
-        final_decision_at=timezone.now(),
         decision_note=f"Offline sanction reference: {sanction_reference}; sanction date: {sanction_date.isoformat()}",
     )
     balance.consumed += days
